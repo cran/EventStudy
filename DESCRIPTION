@@ -1,0 +1,24 @@
+Package: EventStudy
+Type: Package
+Title: Event Study Analysis in R
+Description: Perform Event Studies from through our EventStudyTools.com API interface, parse the results, visualize it, and / or use the results in further analysis.
+Author: Dr. Simon Mueller
+Date: 2017-03-06
+Version: 0.30
+Encoding: UTF-8
+URL: http://eventstudytools.com
+Maintainer: Dr. Simon Mueller <simon.mueller@muon-stat.com>
+License: GPL (>= 2)
+Depends: ggplot2
+Imports: shiny, miniUI, rstudioapi, httr, curl, jsonlite, magrittr (>=
+        1.5), data.table, dplyr, purrr, scales, tidyquant,
+        RColorBrewer, stringr, readr
+Suggests: knitr, rmarkdown
+BugReports: https://github.com/EventStudyTools/api-wrapper.r/issues
+LazyData: true
+RoxygenNote: 6.0.1
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2017-05-19 23:21:30 UTC; info
+Repository: CRAN
+Date/Publication: 2017-05-20 07:13:18 UTC
