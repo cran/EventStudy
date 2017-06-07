@@ -15,10 +15,13 @@ knitr::opts_chunk$set(echo = TRUE)
 #  estSetup <- EventStudyAPI$new(apiUrl)
 #  estSetup$authentication(apiKey)
 #  
-#  estSetup$performEventStudy(estParams = volatilityEstParams,
-#                             dataFiles = c("request_file" = "01_RequestFile.csv",
-#                                           "firm_data"    = "02_firmData.csv",
-#                                           "market_data"  = "03_marketData.csv"))
+#  # Perform Event Study
+#  estResults <- estSetup$performEventStudy(estParams     = volatilityEstParams,
+#                                           dataFiles     = c("request_file" = "01_RequestFile.csv",
+#                                                             "firm_data"    = "02_firmData.csv",
+#                                                             "market_data"  = "03_marketData.csv"),
+#                                           downloadFiles = T, # download result files
+#                                           checkFiles    = T) # check input files
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  returnEstParams <- ARCApplicationInput$new()

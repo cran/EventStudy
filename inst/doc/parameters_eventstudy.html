@@ -10,7 +10,7 @@
 
 <meta name="author" content="Dr. Simon Müller" />
 
-<meta name="date" content="2017-05-20" />
+<meta name="date" content="2017-06-07" />
 
 <title>Event Study: Parameters</title>
 
@@ -112,7 +112,7 @@ img {
 <div id="header">
 <h1 class="title">Event Study: Parameters</h1>
 <h4 class="author"><em>Dr. Simon Müller</em></h4>
-<h4 class="date"><em>2017-05-20</em></h4>
+<h4 class="date"><em>2017-06-07</em></h4>
 </div>
 
 <div id="content">
@@ -144,10 +144,13 @@ apiKey &lt;-<span class="st"> &quot;Please insert your key here&quot;</span>
 estSetup &lt;-<span class="st"> </span>EventStudyAPI$<span class="kw">new</span>(apiUrl)
 estSetup$<span class="kw">authentication</span>(apiKey)
 
-estSetup$<span class="kw">performEventStudy</span>(<span class="dt">estParams =</span> volatilityEstParams, 
-                           <span class="dt">dataFiles =</span> <span class="kw">c</span>(<span class="st">&quot;request_file&quot;</span> =<span class="st"> &quot;01_RequestFile.csv&quot;</span>,
-                                         <span class="st">&quot;firm_data&quot;</span>    =<span class="st"> &quot;02_firmData.csv&quot;</span>,
-                                         <span class="st">&quot;market_data&quot;</span>  =<span class="st"> &quot;03_marketData.csv&quot;</span>))</code></pre></div>
+<span class="co"># Perform Event Study</span>
+estResults &lt;-<span class="st"> </span>estSetup$<span class="kw">performEventStudy</span>(<span class="dt">estParams     =</span> volatilityEstParams, 
+                                         <span class="dt">dataFiles     =</span> <span class="kw">c</span>(<span class="st">&quot;request_file&quot;</span> =<span class="st"> &quot;01_RequestFile.csv&quot;</span>,
+                                                           <span class="st">&quot;firm_data&quot;</span>    =<span class="st"> &quot;02_firmData.csv&quot;</span>,
+                                                           <span class="st">&quot;market_data&quot;</span>  =<span class="st"> &quot;03_marketData.csv&quot;</span>),
+                                         <span class="dt">downloadFiles =</span> T, <span class="co"># download result files</span>
+                                         <span class="dt">checkFiles    =</span> T) <span class="co"># check input files                     </span></code></pre></div>
 <p>When you set your url or api key by <em>EventStudy.URL</em> and <em>EventStudy.KEY</em> then just leave input parameters in <em>.<span class="math inline">\(new()* and *.\)</span>authentication()</em> empty.</p>
 </div>
 <div id="general-event-study-parameters" class="section level1">
@@ -432,6 +435,10 @@ estSetup$<span class="kw">performEventStudy</span>(<span class="dt">estParams =<
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">volatilityEstParams$<span class="kw">setTestStatistics</span>(<span class="kw">c</span>(<span class="st">&quot;aarptlz&quot;</span>, <span class="st">&quot;aarrankz&quot;</span>))</code></pre></div>
 </div>
 </div>
+<div id="how-to-cite" class="section level1">
+<h1>How to Cite</h1>
+<p>Please cite our work in your <a href="https://www.eventstudytools.com/how-cite-eventstudytoolscom">publication</a>.</p>
+</div>
 </div>
 
 
@@ -460,6 +467,7 @@ estSetup$<span class="kw">performEventStudy</span>(<span class="dt">estParams =<
         <li><a href="#benchmark-models-2">Benchmark Models</a></li>
         <li><a href="#test-statistics-2">Test Statistics</a></li>
         </ul></li>
+        <li><a href="#how-to-cite">How to Cite</a></li>
         </ul>
       </div>
     </div>

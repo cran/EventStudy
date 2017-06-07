@@ -121,6 +121,9 @@ ResultParser <- R6::R6Class(classname = "ResultParser",
                                 }
                                 
                                 # Add additional Information
+                                idP <- which(names(self$analysisReport) == "p-value")
+                                names(self$analysisReport)[idP] <- paste0("p-value", 1:length(idP))
+                                
                                 id <- which(names(self$analysisReport) %in% c("Event ID", "Firm", "Reference Market", "Estimation Window Length"))
                                 self$analysisReport %>% 
                                   dplyr::select(id) -> arReport
@@ -138,21 +141,26 @@ ResultParser <- R6::R6Class(classname = "ResultParser",
                                     dplyr::left_join(requestData, by = "Event ID") -> self$arResults
                                 }
                               },
-                              parseAAR = function(path = "aar_results.csv", groups = NULL) {
+                              parseAAR = function(path = "aar_results.csv", groups = NULL, analysisType = "AAR") {
                                 if (is.null(self$analysisReport))
                                   self$parseReport()
                                 
                                 if (!is.null(self$groups))
                                   self$groups <- groups
                                 
-                                # parse AAR values
+                                # parse AAR values & check file
                                 aarResults <- data.table::fread(path)
-                                stringr::str_detect(names(aarResults), "AAR") %>%
+                                if (nrow(aarResults) < 2) {
+                                  message("No AAR Results")
+                                  return(NULL)
+                                }
+                                
+                                stringr::str_detect(names(aarResults), analysisType) %>%
                                   which() -> id
                                 
                                 aarResults %>% 
                                   reshape2::melt(id.vars    = 1, 
-                                                 value.name = "aar") %>% 
+                                                 value.name = tolower(analysisType)) %>% 
                                   dplyr::rename(level     = `Grouping Variable/N`,
                                                 eventTime = variable) -> aarResults
                                 self$aarResults <- aarResults
@@ -222,7 +230,7 @@ ResultParser <- R6::R6Class(classname = "ResultParser",
                               cumSum = function(df, var = "aar", timeVar = NULL, cumVar = NULL, fun = cumsum) {
                                 # calculate cumulative sum
                                 df <- data.table::as.data.table(df)
-                                setkeyv(df, c(cumVar, timeVar))
+                                data.table::setkeyv(df, c(cumVar, timeVar))
                                 setnames(df, var, "car")
                                 df[, car := fun(car), by = cumVar]
                                 df[[var]] <- NULL
@@ -232,7 +240,8 @@ ResultParser <- R6::R6Class(classname = "ResultParser",
                             ),
                             private = list(
                               parseFile = function(path, dataName, header = F) {
-                                if (file.exists(path)) {
+                                # check local and url file
+                                if (file.exists(path) || !httr::http_error(path)) {
                                   self[[dataName]] <- data.table::fread(path, header = header)
                                   TRUE
                                 } else {

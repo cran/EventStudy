@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Dr. Simon Müller" />
+
+<meta name="date" content="2017-06-07" />
+
+<title>Howto: An Example with Data Preparation</title>
+
+<script src="howto_eventstudy_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="howto_eventstudy_files/bootstrap-3.3.6/css/bootstrap.min.css" rel="stylesheet" />
+<script src="howto_eventstudy_files/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+<script src="howto_eventstudy_files/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<script src="howto_eventstudy_files/navigation-1.1/tabsets.js"></script>
+<script src="howto_eventstudy_files/navigation-1.1/codefolding.js"></script>
+<link href="howto_eventstudy_files/magnific-popup-1.1.0/magnific-popup.css" rel="stylesheet" />
+<script src="howto_eventstudy_files/magnific-popup-1.1.0/jquery.magnific-popup.min.js"></script>
+<link href="howto_eventstudy_files/clean-0.1/clean.css" rel="stylesheet" />
+<script src="howto_eventstudy_files/clean-0.1/clean.js"></script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code > span.dt { color: #204a87; } /* DataType */
+code > span.dv { color: #0000cf; } /* DecVal */
+code > span.bn { color: #0000cf; } /* BaseN */
+code > span.fl { color: #0000cf; } /* Float */
+code > span.ch { color: #4e9a06; } /* Char */
+code > span.st { color: #4e9a06; } /* String */
+code > span.co { color: #8f5902; font-style: italic; } /* Comment */
+code > span.ot { color: #8f5902; } /* Other */
+code > span.al { color: #ef2929; } /* Alert */
+code > span.fu { color: #000000; } /* Function */
+code > span.er { color: #a40000; font-weight: bold; } /* Error */
+code > span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #000000; } /* Constant */
+code > span.sc { color: #000000; } /* SpecialChar */
+code > span.vs { color: #4e9a06; } /* VerbatimString */
+code > span.ss { color: #4e9a06; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #000000; } /* Variable */
+code > span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code > span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code > span.ex { } /* Extension */
+code > span.at { color: #c4a000; } /* Attribute */
+code > span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code > span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+
+
+<link rel="stylesheet" href="kable.css" type="text/css" />
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+</style>
+<div class="container-fluid main-container">
+  <div class="row">
+     <div class="col-md-10">
+
+
+
+
+<div id="header">
+<h1 class="title">Howto: An Example with Data Preparation</h1>
+<h4 class="author"><em>Dr. Simon Müller</em></h4>
+<h4 class="date"><em>2017-06-07</em></h4>
+</div>
+
+<div id="content">
+<div id="overview" class="section level1">
+<h1>Overview</h1>
+<p>Based on the Dieselgate we want to show you how you are able to fetch data in R, perform an Event Study, and do some basic plots with our R package.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(tidyquant)
+<span class="kw">library</span>(dplyr)
+<span class="kw">library</span>(readr)</code></pre></div>
+</div>
+<div id="data-preparation" class="section level1">
+<h1>Data Preparation</h1>
+<p>We use the package tidyquant to fetch the automotive stock data from Yahoo Finance. As we cannot get the full volume size from this companies through Yahoo Finance API, we do not perform a volume Event Study in this vignette.</p>
+<p>Let’s define the window from which we want to fetch the data of the German auto companies.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">startDate &lt;-<span class="st"> &quot;2014-05-01&quot;</span>
+endDate &lt;-<span class="st"> &quot;2015-12-31&quot;</span></code></pre></div>
+<p>We focus us on the big five motor manufacturer in Germany, namely</p>
+<ul>
+<li>VW Group
+<ul>
+<li>VW</li>
+<li>Audi</li>
+<li>Porsche</li>
+</ul></li>
+<li>Daimler</li>
+<li>BMW</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Firm Data</span>
+firmSymbols &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;VOW.DE&quot;</span>, <span class="st">&quot;NSU.DE&quot;</span>, <span class="st">&quot;PAH3.DE&quot;</span>, <span class="st">&quot;BMW.DE&quot;</span>, <span class="st">&quot;DAI.DE&quot;</span>)
+firmNames &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;VW preferred&quot;</span>, <span class="st">&quot;Audi&quot;</span>, <span class="st">&quot;Porsche Automobil Hld&quot;</span>, <span class="st">&quot;BMW&quot;</span>, <span class="st">&quot;Daimler&quot;</span>)
+firmSymbols %&gt;%<span class="st"> </span>
+<span class="st">  </span>tidyquant::<span class="kw">tq_get</span>(<span class="dt">from =</span> startDate, <span class="dt">to =</span> endDate) %&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">date =</span> <span class="kw">format</span>(date, <span class="st">&quot;%d.%m.%Y&quot;</span>)) -&gt;<span class="st"> </span>firmData
+knitr::<span class="kw">kable</span>(<span class="kw">head</span>(firmData), <span class="dt">pad=</span><span class="dv">0</span>)</code></pre></div>
+<p>As reference market we choose the DAX.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Index Data</span>
+indexSymbol &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;^GDAXI&quot;</span>)
+indexName &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;DAX&quot;</span>)
+indexSymbol %&gt;%<span class="st"> </span>
+<span class="st">  </span>tidyquant::<span class="kw">tq_get</span>(<span class="dt">from =</span> startDate, <span class="dt">to =</span> endDate) %&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">date =</span> <span class="kw">format</span>(date, <span class="st">&quot;%d.%m.%Y&quot;</span>)) -&gt;<span class="st"> </span>indexData
+indexData$symbol &lt;-<span class="st"> &quot;DAX&quot;</span>
+knitr::<span class="kw">kable</span>(<span class="kw">head</span>(indexData), <span class="dt">pad=</span><span class="dv">0</span>)</code></pre></div>
+<p>Now, after we have fetched all the data, we prepare the data files for the API call, as described in the introductionary vignette. We prepare in this step already the volume data for later purposes.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Price files for firms and market</span>
+firmData %&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">select</span>(symbol, date, adjusted) %&gt;%<span class="st"> </span>
+<span class="st">  </span>readr::<span class="kw">write_delim</span>(<span class="dt">path      =</span> <span class="st">&quot;02_firmDataPrice.csv&quot;</span>, 
+                     <span class="dt">delim     =</span> <span class="st">&quot;;&quot;</span>, 
+                     <span class="dt">col_names =</span> F)
+
+indexData %&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">select</span>(symbol, date, adjusted) %&gt;%<span class="st"> </span>
+<span class="st">  </span>readr::<span class="kw">write_delim</span>(<span class="dt">path      =</span> <span class="st">&quot;03_marketDataPrice.csv&quot;</span>, 
+                     <span class="dt">delim     =</span> <span class="st">&quot;;&quot;</span>, 
+                     <span class="dt">col_names =</span> F)
+
+<span class="co"># Volume files for firms and market</span>
+firmData %&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">select</span>(symbol, date, volume) %&gt;%<span class="st"> </span>
+<span class="st">  </span>readr::<span class="kw">write_delim</span>(<span class="dt">path      =</span> <span class="st">&quot;02_firmDataVolume.csv&quot;</span>, 
+                     <span class="dt">delim     =</span> <span class="st">&quot;;&quot;</span>, 
+                     <span class="dt">col_names =</span> F)
+
+indexData %&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">select</span>(symbol, date, volume) %&gt;%<span class="st"> </span>
+<span class="st">  </span>readr::<span class="kw">write_delim</span>(<span class="dt">path      =</span> <span class="st">&quot;03_marketDataVolume.csv&quot;</span>, 
+                     <span class="dt">delim     =</span> <span class="st">&quot;;&quot;</span>, 
+                     <span class="dt">col_names =</span> F)</code></pre></div>
+<p>Finally, we have to prepare the request file. The parameters for this Event Study are:</p>
+<ul>
+<li>Estimation window: 250</li>
+<li>Event window: -10 to 10</li>
+<li>Event date: 18.09.2015</li>
+</ul>
+<p>Details of the format can be found in the introductionary vignette.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">group &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="st">&quot;VW Group&quot;</span>, <span class="dv">3</span>), <span class="kw">rep</span>(<span class="st">&quot;Other&quot;</span>, <span class="dv">2</span>))
+request &lt;-<span class="st"> </span><span class="kw">cbind</span>(<span class="kw">c</span>(<span class="dv">1</span>:<span class="dv">5</span>), firmSymbols, <span class="kw">rep</span>(indexName, <span class="dv">5</span>), <span class="kw">rep</span>(<span class="st">&quot;18.09.2015&quot;</span>, <span class="dv">5</span>), group, <span class="kw">rep</span>(-<span class="dv">10</span>, <span class="dv">5</span>), <span class="kw">rep</span>(<span class="dv">10</span>, <span class="dv">5</span>), <span class="kw">rep</span>(-<span class="dv">11</span>, <span class="dv">5</span>), <span class="kw">rep</span>(<span class="dv">250</span>, <span class="dv">5</span>))
+request %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">as.data.frame</span>() %&gt;%<span class="st"> </span>
+<span class="st">  </span>readr::<span class="kw">write_delim</span>(<span class="st">&quot;01_requestFile.csv&quot;</span>, <span class="dt">delim =</span> <span class="st">&quot;;&quot;</span>, <span class="dt">col_names =</span> F)</code></pre></div>
+</div>
+<div id="perform-event-studies-abnromal-return-volume-and-volatility" class="section level1">
+<h1>Perform Event Studies: Abnromal Return, Volume, and Volatility</h1>
+<p>After the preparation steps, we are now able to start the calculations. We use in all type of Event Studies the GARCH(1, 1) model. Please consider in your Event Studies that fitting this model is computational expensive and no nearly realtime response from the API can be expected.</p>
+<div id="abnormal-return-event-study" class="section level2">
+<h2>Abnormal Return Event Study</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">key &lt;-<span class="st"> &quot;573e58c665fcc08cc6e5a660beaad0cb&quot;</span>
+
+<span class="kw">library</span>(EventStudy)
+est &lt;-<span class="st"> </span>EventStudyAPI$<span class="kw">new</span>()
+est$<span class="kw">authentication</span>(<span class="dt">apiKey =</span> key)
+
+<span class="co"># get &amp; set parameters for abnormal return Event Study</span>
+<span class="co"># we use a garch model and csv as return</span>
+<span class="co"># Attention: fitting a GARCH(1, 1) model is compute intensive</span>
+esaParams &lt;-<span class="st"> </span>EventStudy::ARCApplicationInput$<span class="kw">new</span>()
+esaParams$<span class="kw">setResultFileType</span>(<span class="st">&quot;csv&quot;</span>)
+esaParams$<span class="kw">setBenchmarkModel</span>(<span class="st">&quot;garch&quot;</span>)
+
+dataFiles &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;request_file&quot;</span> =<span class="st"> &quot;01_requestFile.csv&quot;</span>,
+               <span class="st">&quot;firm_data&quot;</span>    =<span class="st"> &quot;02_firmDataPrice.csv&quot;</span>,
+               <span class="st">&quot;market_data&quot;</span>  =<span class="st"> &quot;03_marketDataPrice.csv&quot;</span>)
+
+<span class="co"># check data files, you can do it also in our R6 class</span>
+EventStudy::<span class="kw">checkFiles</span>(dataFiles)
+
+<span class="co"># now let us perform the Event Study</span>
+arEventStudy &lt;-<span class="st"> </span>est$<span class="kw">performEventStudy</span>(<span class="dt">estParams     =</span> esaParams, 
+                                      <span class="dt">dataFiles     =</span> dataFiles, 
+                                      <span class="dt">downloadFiles =</span> T)</code></pre></div>
+<p>Now, you can use the downloaded csv (or your preferred data format) files in your analysis. During the creation of the <code>arEventStudy</code> object we merge information from the request file, and the result files.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr::<span class="kw">kable</span>(<span class="kw">head</span>(arEventStudy$arResults))</code></pre></div>
+<p>The averaged abnormal return (aar) <code>data.frame</code> has the following shape:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr::<span class="kw">kable</span>(<span class="kw">head</span>(arEventStudy$aarResults))</code></pre></div>
+<p>You can find the statistic naming in <code>arEventStudy$aarStatistics</code>.</p>
+</div>
+<div id="abnormal-volatility-event-study" class="section level2">
+<h2>Abnormal Volatility Event Study</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">est &lt;-<span class="st"> </span>EventStudyAPI$<span class="kw">new</span>()
+est$<span class="kw">authentication</span>(<span class="dt">apiKey =</span> key)
+
+<span class="co"># get &amp; set parameters for abnormal return Event Study</span>
+esaParams &lt;-<span class="st"> </span>EventStudy::AVyCApplicationInput$<span class="kw">new</span>()
+esaParams$<span class="kw">setResultFileType</span>(<span class="st">&quot;csv&quot;</span>)
+ 
+avycEventStudy &lt;-<span class="st"> </span>est$<span class="kw">performEventStudy</span>(<span class="dt">estParams    =</span> esaParams, 
+                                       <span class="dt">dataFiles     =</span> dataFiles,
+                                       <span class="dt">downloadFiles =</span> T)</code></pre></div>
+<p>The prepared <code>data.frames</code> in <code>avycEventStudy</code> have a similar shape as for the abnormal return Event Study.</p>
+</div>
+<div id="abnormal-volume-event-study" class="section level2">
+<h2>Abnormal Volume Event Study</h2>
+<p>This will be added in a later stage.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># est &lt;- EventStudyAPI$new()</span>
+<span class="co"># est$authentication(apiKey = key)</span>
+<span class="co"># </span>
+<span class="co"># # get &amp; set parameters for abnormal return Event Study</span>
+<span class="co"># esaParams &lt;- EventStudy::AVCApplicationInput$new()</span>
+<span class="co"># esaParams$setResultFileType(&quot;csv&quot;)</span>
+<span class="co"># </span>
+<span class="co"># avEventStudy &lt;- est$performEventStudy(estParams = esaParams,</span>
+<span class="co">#                       dataFiles = c(&quot;request_file&quot; = &quot;01_requestFile.csv&quot;,</span>
+<span class="co">#                                     &quot;firm_data&quot;    = &quot;02_firmDataVolume.csv&quot;,</span>
+<span class="co">#                                     &quot;market_data&quot;  = &quot;03_marketDataVolume.csv&quot;))</span></code></pre></div>
+</div>
+</div>
+</div>
+
+
+    </div>
+    <div class="col-md-2">
+      <div id="toc">
+      	<button type="button" class="close">×</button>
+        <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#data-preparation">Data Preparation</a></li>
+        <li><a href="#perform-event-studies-abnromal-return-volume-and-volatility">Perform Event Studies: Abnromal Return, Volume, and Volatility</a><ul>
+        <li><a href="#abnormal-return-event-study">Abnormal Return Event Study</a></li>
+        <li><a href="#abnormal-volatility-event-study">Abnormal Volatility Event Study</a></li>
+        <li><a href="#abnormal-volume-event-study">Abnormal Volume Event Study</a></li>
+        </ul></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+
+  // add bootstrap table styles to pandoc tables
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+
+});
+</script>
+
+<script>
+$(document).ready(function () {
+ 	  });
+</script>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

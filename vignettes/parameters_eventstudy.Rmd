@@ -11,7 +11,7 @@ output:
     highlight: tango
     css: kable.css
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Parameters}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -62,10 +62,13 @@ apiKey <- "Please insert your key here"
 estSetup <- EventStudyAPI$new(apiUrl)
 estSetup$authentication(apiKey)
 
-estSetup$performEventStudy(estParams = volatilityEstParams, 
-                           dataFiles = c("request_file" = "01_RequestFile.csv",
-                                         "firm_data"    = "02_firmData.csv",
-                                         "market_data"  = "03_marketData.csv"))
+# Perform Event Study
+estResults <- estSetup$performEventStudy(estParams     = volatilityEstParams, 
+                                         dataFiles     = c("request_file" = "01_RequestFile.csv",
+                                                           "firm_data"    = "02_firmData.csv",
+                                                           "market_data"  = "03_marketData.csv"),
+                                         downloadFiles = T, # download result files
+                                         checkFiles    = T) # check input files                     
 ```
 
 When you set your url or api key by *EventStudy.URL* and *EventStudy.KEY* then
@@ -334,3 +337,8 @@ Usage:
 ```{r, eval=FALSE}
 volatilityEstParams$setTestStatistics(c("aarptlz", "aarrankz"))
 ```
+
+# How to Cite
+
+Please cite our work in your [publication](https://www.eventstudytools.com/how-cite-eventstudytoolscom).
+
