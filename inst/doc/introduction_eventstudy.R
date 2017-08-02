@@ -1,3 +1,11 @@
+## ----echo=FALSE----------------------------------------------------------
+knitr::opts_chunk$set(
+  comment = "#>",
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
 ## ---- eval=FALSE---------------------------------------------------------
 #  apiUrl <- "http://api.eventstudytools.com"
 #  apiKey <- "Please insert your key here"

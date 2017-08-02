@@ -1,3 +1,14 @@
+## Version 0.32
+
+- redesign vignettes
+
+### Bugfixes 
+
+- file parser bugfix
+- aarPlot bugfix CI interval
+- spelling fixes
+
+
 ## Version 0.31
 
 - add vignette
