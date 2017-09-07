@@ -10,8 +10,8 @@ interface.}
 ResultParser
 }
 \description{
-This result file parser works at the moment just for csv files. Please read
-the vignette for further details (Coming soon). We will restructure our 
+This result file parser works currently only with csv files. Please read
+the vignette for further details (coming soon). We will restructure our 
 result reports soon. So, this function may change dramatically. This object 
 can be used for plotting your results.
 }
@@ -26,8 +26,10 @@ can be used for plotting your results.
   \item{\code{parseAR(path = "ar_results.csv")}}{This method parses the 
   abnormal return file (ar_results.csv). Furthermore, it triggers 
   \code{parseReport} and join firm and index name.}
-  \item{\code{plotAR(id = NULL)}}{This method abnormal returns time series 
-  with \code{id} as the firm id.}}
+  \item{\code{parseCAR(path = "car_results.csv")}}{This method parses the 
+  cumulative abnormal return file (ar_results.csv). Furthermore, it triggers 
+  \code{parseReport} and join firm and index name.}
+}
 }
 
 \examples{

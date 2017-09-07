@@ -15,6 +15,9 @@ knitr::opts_chunk$set(
 #  # options(EventStudy.URL = apiUrl)
 #  options(EventStudy.KEY = apiKey)
 #  
+#  # use EventStudy estAPIKey function
+#  estAPIKey(apiKey)
+#  
 #  # initialize object
 #  estSetup <- EventStudyAPI$new()
 

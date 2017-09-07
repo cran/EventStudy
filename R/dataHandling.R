@@ -8,7 +8,7 @@
 #'
 #' @return data.frame
 #' 
-#' @expamles
+#' @examples 
 #' \dontrun{
 #' # save example files to current working directory
 #' getSP500ExampleFiles()
@@ -67,7 +67,7 @@ checkFile <- function(path, type = "request_file") {
     }
     
     # check date format
-    checkDate(dtData[[4]])
+    checkDateFormat(dtData[[4]])
   } else if (type %in% c("firm_data", "market_data")) {
     # check character vectors
     columnLabels <- c("firm", "date", "value")
@@ -88,7 +88,7 @@ checkFile <- function(path, type = "request_file") {
                   .f = checkClass, class = "numeric") -> ret
     
     # check date format
-    checkDate(dtData[[2]])
+    checkDateFormat(dtData[[2]])
   } 
   
   return(dtData)
@@ -105,7 +105,7 @@ checkFile <- function(path, type = "request_file") {
 #' firm_data, and market_data
 #' @param returnData returns the data as list of data.frames
 #' 
-#' @expamles
+#' @examples
 #' \dontrun{
 #' # save example files to current working directory
 #' getSP500ExampleFiles()
@@ -122,6 +122,9 @@ checkFiles <- function(dataFiles = c("request_file" = "01_RequestFile.csv",
                                      "firm_data"    = "02_firmData.csv", 
                                      "market_data"  = "03_MarketData.csv"),
                        returnData = F) {
+  # For R checks
+  X1 <- NULL
+  
   # check file names
   fileNames <- names(dataFiles)
   testthat::expect("request_file" %in% fileNames, "checkFiles: filename request_file is not correct")
@@ -148,6 +151,39 @@ checkFiles <- function(dataFiles = c("request_file" = "01_RequestFile.csv",
     purrr::map(.f = function(x, y) {
       testthat::expect(x %in% y, paste(x, "not in firm data"))
     }, y = firmIndexData) -> ret
+  
+  # parse dates
+  eventDate <- requestData[[4]]
+  eventDate <- as.Date(eventDate, format = "%d.%m.%Y")
+  firmData[[2]] <- as.Date(firmData[[2]], format = "%d.%m.%Y")
+  marketData[[2]] <- as.Date(marketData[[2]], format = "%d.%m.%Y")
+  
+  # check event window range
+  maxEventDate <- eventDate + requestData[[7]]
+  firmIndex %>% 
+    purrr::map2(.y = maxEventDate, .f = function(x, y, firmData, marketData) {
+      firmData %>% 
+        dplyr::filter(X1 == x) -> subFirmData
+      
+      testthat::expect(y <= max(subFirmData[[2]]), paste0("Event window end is after max firm data for firm: ", x))
+      testthat::expect(y <= max(marketData[[2]]), paste0("Event window end is after max market data"))
+    }, firmData = firmData, marketData = marketData)
+
+  # check estimation window range
+  minEstimationDate <- eventDate - requestData[[9]]
+  firmIndex %>% 
+    purrr::map2(.y = minEstimationDate, .f = function(x, y, firmData, marketData) {
+      firmData %>% 
+        dplyr::filter(X1 == x) -> subFirmData
+      
+      testthat::expect(y >= min(subFirmData[[2]]), paste0("Estimation window start is before min firm data for firm: ", x))
+      testthat::expect(y >= min(marketData[[2]]), paste0("Estimation window start is before min market data"))
+    }, firmData = firmData, marketData = marketData)
+  
+  # check date 01.01.1970
+  testthat::expect(all(eventDate >= as.Date("1970-01-01")), "Dates must be after 1970-01-01")
+  testthat::expect(all(firmData[[2]] >= as.Date("1970-01-01")), "Dates must be after 1970-01-01")
+  testthat::expect(all(marketData[[2]] >= as.Date("1970-01-01")), "Dates must be after 1970-01-01")
   
   if (returnData) {
     return(list(
@@ -184,7 +220,7 @@ checkClass <- function(x, y, class = "integer") {
 #' @param x a character vector
 #' 
 #' @keywords internal
-checkDate <- function(x) {
+checkDateFormat <- function(x) {
   x <- as.Date(x, format = "%d.%m.%Y")
   testthat::expect(!any(is.na(x)), "Incorrect date format. Correct format is: %d.%m.%Y, e.g. 28.10.2011")
 }

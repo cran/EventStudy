@@ -98,3 +98,31 @@ errorMessage <- function(x) {
   if(isError(x)) attr(x, "condition")$message
 }
 
+
+#' Set eventStudy API Key
+#' 
+#' @param key EventStudy API Key
+#' 
+#' @export
+estAPIKey <- function(key) {
+  options(EventStudy.KEY = key)
+}
+
+
+#' @title Returns default parameters for an EventStudy type
+#' 
+#' @description Creates a default parameter object for performing an Event Study
+#' 
+#' @param type type of event study (default: arc)
+#' 
+#' @keywords internal
+getDefaultApplicationInput <- function(type = "arc") {
+  if (type == "arc") {
+    defaultParams <- ARCApplicationInput$new()
+  } else if (type == "avc") {
+    defaultParams <- ARCApplicationInput$new()
+  } else if (type == "avyc") {
+    defaultParams <- ARCApplicationInput$new()
+  }
+  defaultParams
+}

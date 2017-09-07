@@ -199,10 +199,10 @@ EventStudyAddin <- function() {
                          column(4, h5("Adjustment Rule for Non-Trading Days"),
                                 radioButtons(inputId = "adjustmentNonTradingDays", 
                                              label   = NA, 
-                                             choices = c("Take earlier trading day"     = "csv", 
+                                             choices = c("Take earlier trading day"     = "earlier", 
                                                          "Take later trading day"       = "later", 
-                                                         "Keep non-trading day"         = "XLSX", 
-                                                         "Skip respective observations" = "ods")))
+                                                         "Keep non-trading day"         = "keep", 
+                                                         "Skip respective observations" = "skip")))
                 ), tags$hr(style = hrStyle)),
               fluidRow(style = fluidRowStyle,
                        column(4, 
@@ -300,7 +300,7 @@ EventStudyAddin <- function() {
     
     
     # > Perform Analysis -----
-    observeEvent(input$performAnalysis, {
+    eventReactive(input$performAnalysis, {
       if (is.null(estAPI)) {
         userMsg$output <- "API is not initialized. Please connect to API."
       } else {
@@ -335,10 +335,10 @@ EventStudyAddin <- function() {
         
         statisticsIDVector <- statisticsIDVectorList[[selectedType]]
         statisticsIDVector %>% 
-          purrr::map2(.y = input, .f = .getStatistics) %>% 
-          unlist() %>% 
-          which() -> selectedStatistics
-        if (length(selectedStatistics)) {
+          purrr::map(.f = .getStatistics, y = input) %>% 
+          unlist() -> selectedStatistics
+        if (!is.null(selectedStatistics)) {
+          selectedStatistics <- which(selectedStatistics)
           selectedStatistics <- statisticsIDVector[selectedStatistics]
           returnEstParams$setTestStatistics(selectedStatistics)
         }
@@ -359,9 +359,11 @@ EventStudyAddin <- function() {
           resultPath <- getwd()
         }
         
-        ret <- estAPI$performEventStudy(estParams  = returnEstParams,
-                                        dataFiles  = dataFiles,
-                                        resultPath = resultPath)
+        estResult<- estAPI$performEventStudy(estParams  = returnEstParams,
+                                             dataFiles  = dataFiles,
+                                             resultPath = resultPath)
+        rstudioapi::sendToConsole("estResult", F)
+        invisible(stopApp())
       }
     })
   }

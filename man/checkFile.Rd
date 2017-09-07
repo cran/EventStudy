@@ -2,7 +2,7 @@
 % Please edit documentation in R/dataHandling.R
 \name{checkFile}
 \alias{checkFile}
-\title{Chheck input data files}
+\title{Check input data files}
 \usage{
 checkFile(path, type = "request_file")
 }
@@ -17,4 +17,13 @@ data.frame
 \description{
 Check correct column, date, and shape of the input 
 data files
+}
+\examples{
+\dontrun{
+# save example files to current working directory
+getSP500ExampleFiles()
+               
+checkFile("01_RequestFile.csv", "request_file")
+}
+
 }

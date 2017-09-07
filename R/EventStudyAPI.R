@@ -63,7 +63,7 @@
 #'  \item{eventstudyapi}{An \code{EventStudyAPI} object}
 #'  \item{apiServerUrl}{URL to the API endpoint}
 #'  \item{apiKey}{Key for authentication}
-#'  \item{input}{An \code{ApplicationInputInterface} object.
+#'  \item{input}{An \code{ApplicationInputInterface} object.}
 #'  \item{fileKey}{Type of input file: \code{request_file}, \code{firm_data}, 
 #'  and \code{market_data}}
 #'  \item{fileName}{Data filename}
@@ -204,13 +204,7 @@ EventStudyAPI <- R6::R6Class(classname = "EventStudyAPI",
                                                                    downloadFiles = T,
                                                                    checkFiles    = F) {
                                  estType <- match.arg(estType, c("arc", "avc", "avyc"))
-                                 if (estType == "arc") {
-                                   defaultParams <- ARCApplicationInput$new()
-                                 } else if (estType == "avc") {
-                                   defaultParams <- ARCApplicationInput$new()
-                                 } else if (estType == "avyc") {
-                                   defaultParams <- ARCApplicationInput$new()
-                                 }
+                                 defaultParams <- getDefaultApplicationInput(estType)
                                  
                                  self$performEventStudy(defaultParams, dataFiles, destDir)
                                },
@@ -373,6 +367,11 @@ EventStudyAPI <- R6::R6Class(classname = "EventStudyAPI",
                                  if (length(id)) {
                                    estParser$parseAAR(self$resultFiles[id])
                                  }
+                                 id <- which(stringr::str_detect(self$resultFiles, "/car_"))
+                                 if (length(id)) {
+                                   estParser$parseCAR(self$resultFiles[id])
+                                 }
+                                 
                                  
                                  # avyc parsing
                                  id <- which(stringr::str_detect(self$resultFiles, "/avy_"))
@@ -384,8 +383,7 @@ EventStudyAPI <- R6::R6Class(classname = "EventStudyAPI",
                                    estParser$parseAAR(self$resultFiles[id])
                                  }
                                  
-                                 # av paring
-                                 
+                                 # TODO: av paring
                                  
                                  estParser
                                },
