@@ -300,12 +300,23 @@ EventStudyAddin <- function() {
     
     
     # > Perform Analysis -----
-    eventReactive(input$performAnalysis, {
+    observeEvent(input$performAnalysis, {
       if (is.null(estAPI)) {
         userMsg$output <- "API is not initialized. Please connect to API."
       } else {
+        # Type of Event Study
+        selectedType <- input$eventStudyType
+        if (is.null(selectedType))
+          selectedType <- "return"
+        
         # 1. Set Parameters 
-        returnEstParams <- ARCApplicationInput$new()
+        if (selectedType == "return") {
+          returnEstParams <- ARCApplicationInput$new()
+        } else if (selectedType == "volume") {
+          returnEstParams <- AVCApplicationInput$new()
+        } else if (selectedType == "volatility") {
+          returnEstParams <- AVyCApplicationInput$new()
+        }
         
         ## get result file format
         resultFile <- input$resultFileFormat
@@ -328,11 +339,6 @@ EventStudyAddin <- function() {
           y[[x]]
         }
         
-        # Type of Event Study
-        selectedType <- input$eventStudyType
-        if (is.null(selectedType))
-          selectedType <- "return"
-        
         statisticsIDVector <- statisticsIDVectorList[[selectedType]]
         statisticsIDVector %>% 
           purrr::map(.f = .getStatistics, y = input) %>% 
@@ -345,9 +351,10 @@ EventStudyAddin <- function() {
         
         # initialize API object with parameter object
         # get data files
-        requestFile <- input$requestFile$dataPath
-        firmDataFile <- input$firmDataFile$dataPath
-        marketDataFile <- input$marketDataFile$dataPath
+        requestFile <- input$requestFile$datapath
+        firmDataFile <- input$firmDataFile$datapath
+        marketDataFile <- input$marketDataFile$datapath
+        print("Validate input files.")
         shiny::validate(shiny::need(!is.null(requestFile) && !is.null(firmDataFile) && !is.null(marketDataFile), "Please upload your data!"))
         dataFiles <- c("request_file" = requestFile, 
                        "firm_data"    = firmDataFile, 
@@ -359,10 +366,14 @@ EventStudyAddin <- function() {
           resultPath <- getwd()
         }
         
-        estResult<- estAPI$performEventStudy(estParams  = returnEstParams,
-                                             dataFiles  = dataFiles,
-                                             resultPath = resultPath)
-        rstudioapi::sendToConsole("estResult", F)
+        print("Perform Event Study")
+        estResult <- estAPI$performEventStudy(estParams = returnEstParams,
+                                              dataFiles = dataFiles,
+                                              destDir   = resultPath)
+        
+        save(estResult, file = "estResultAddin.RData")
+        print("Event Study finished")
+        rstudioapi::sendToConsole(code = "load('estResultAddin.RData'); estResult", execute = T)
         invisible(stopApp())
       }
     })

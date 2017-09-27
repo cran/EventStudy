@@ -4,6 +4,16 @@
 - Fixing date issue: dates before 01.01.1970 are currently not working
 
 
+## 0.34
+
+### Bugfixes
+
+- EventStudyAddin
+    - setTestStatistics did not worked proberly
+    - added all types of event studies
+    - ResultPraser object is now returned to the console
+
+
 ## Version 0.33
 
 - add Excel export functionality to ResultParser
