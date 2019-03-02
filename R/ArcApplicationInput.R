@@ -13,43 +13,40 @@
 # //
 # // You should have received a copy of the GNU General Public License
 # // along with EventStudy  If not, see <http://www.gnu.org/licenses/>.
-#' @name AVCApplicationInput
+#' @name ARCApplicationInput
 #' 
-#' @title Abnormal Volume Calculation Parameters
+#' @title Abnormal Return Calculation Parameters
 #' 
 #' @description 
-#' This R6 class defines the parameters for the Abnormal Volume Event Study. 
-#' We recommend to use the \code{set} functionality to setup your Event Study, 
-#' as we check input parameters.
+#' This R6 class defines the parameters for the Return Event Study. We recommend
+#' to use the \code{set} functionality to setup your Event Study, as we check
+#' input parameters.
 #' 
 #' For more details see the help vignette:
 #' \code{vignette("parameters_eventstudy", package = "EventStudy")}
 #' 
 #' @section Methods:
 #' \describe{
-#'   \item{\code{$new()}}{Constructor for AVCApplicationInput}
+#'   \item{\code{$new()}}{Constructor for ARCApplicationInput.}
 #'   \item{\code{$setEMail(eMail)}}{Set the e-Mail address for reporting. This 
-#'   functionality is currently not working}
+#'   functionality is currently not working.}
 #'   \item{\code{$setBenchmarkModel(model = 'mm')}}{Setter for the benchmark
-#'   models}
+#'   model.s}
 #'   \item{\code{$setReturnType(returnType)}}{Setter for the return type (log 
 #'   or simple)}
 #'   \item{\code{$setTestStatistics(testStatistics)}}{Setter for the test 
-#'   statistics}
+#'   statistics.}
 #'}
 #' 
 #' 
 #' @section Arguments:
 #' \describe{
-#'  \item{AVCApplicationInput}{An \code{AVCApplicationInput} object}
+#'  \item{ESTARCParameters}{An \code{ARCApplicationInput} object}
 #'  \item{eMail}{An E-Mail address in \code{String} format}
 #'  \item{model}{A benchmark model in \code{String} format}
 #'  \item{returnType}{A return type in \code{String} format}
-#'  \item{testStatistics}{A \code{String} vector with test statistics}
+#'  \item{testStatistics}{A \code{String} vector with test statistics.}
 #' }
-#' 
-#' 
-#' @format \code{\link[R6]{R6Class}} object.
 #' 
 #' @seealso \url{https://www.eventstudytools.com/axc/upload}
 #' 
@@ -62,7 +59,7 @@
 #' getSP500ExampleFiles()
 #' 
 #' # Generate a new parameter object
-#' avcParams <- AVCApplicationInput$new()
+#' arcParams <- ARCApplicationInput$new()
 #' 
 #' # set test statistics
 #' arcParams$setBenchmarkModel("garch")
@@ -73,7 +70,7 @@
 #' estSetup$authentication(apiKey)
 #'
 #' # Perform Event Study
-#' estSetup$performEventStudy(estParams = avcParams, 
+#' estSetup$performEventStudy(estParams = arcParams, 
 #'                            dataFiles = c("request_file" = "01_RequestFile.csv",
 #'                                          "firm_data"    = "02_firmData.csv",
 #'                                          "market_data"  = "03_marketData.csv"))
@@ -83,16 +80,17 @@
 #' }
 #' 
 #' @export
-AVCApplicationInput <- R6::R6Class(classname = "AVCApplicationInput",
+ARCApplicationInput <- R6::R6Class(classname = "ARCApplicationInput",
                                    inherit = EventStudyApplicationInput,
                                    public = list(
                                      task             = list(locale = 'en'),
-                                     key              = "avc",
+                                     key              = "arc",
                                      benchmark_model  = list(benchmark_model = "mm"),
                                      return_type      = list(return_type = "log"),
                                      non_trading_days = list(non_trading_days = "later"),
                                      test_statistics  = list("art", "cart", 
                                                              "aart", "caart", "abhart", 
+                                                             #"aarcdat", "caarcdat",
                                                              "aarptlz", "caarptlz", 
                                                              "aaraptlz", "caaraptlz", 
                                                              "aarbmpz", "caarbmpz", 
@@ -102,6 +100,7 @@ AVCApplicationInput <- R6::R6Class(classname = "AVCApplicationInput",
                                                              "aargrankt", "caargrankt",
                                                              "aargrankz", "caargrankz", 
                                                              "aargsignz", "caargsignz"
+                                                             #"aarjackknivet", "caarjackknivet"
                                      ),
                                      request_file = list(
                                        key  = "request_file",
@@ -154,6 +153,7 @@ AVCApplicationInput <- R6::R6Class(classname = "AVCApplicationInput",
                                      allowedTestStatistics = c(
                                        "art", "cart",
                                        "aart", "caart", "abhart",
+                                       # "aarcdat", "caarcdat",
                                        "aarptlz", "caarptlz", 
                                        "aaraptlz", "caaraptlz",
                                        "aarbmpz", "caarbmpz",
@@ -163,13 +163,19 @@ AVCApplicationInput <- R6::R6Class(classname = "AVCApplicationInput",
                                        "aargrankt", "caargrankt",
                                        "aargrankz", "caargrankz",
                                        "aargsignz", "caargsignz"
+                                       # "aarjackknivet", "caarjackknivet"
                                      ),
-                                     allowedBenchmarkModel = c("Market Model"                    = "mm", 
-                                                               "Scholes/Williams Model"          = "mm-sw", 
-                                                               "Market Adjusted"                 = "mam", 
-                                                               "Comparison Period Mean Adjusted" = "cpmam"),
+                                     allowedBenchmarkModel = c("Market Model"                        = "mm", 
+                                                               "Scholes/Williams Model"              = "mm-sw", 
+                                                               "Market Adjusted"                     = "mam", 
+                                                               "Comparison Period Mean Adjusted"     = "cpmam",
+                                                               "Fama-French 3 Factor Model"          = "ff3fm",
+                                                               "Fama-French-Momentum 4 Factor Model" = "ffm4fm",
+                                                               "GARCH(1,1)"                          = "garch", 
+                                                               "EGARCH(1, 1)"                        = "egarch"),
                                      allowedNonTradingDays = c("Take earlier trading day"     = "earlier", 
                                                                "Take later trading day"       = "later", 
-                                                               "Keep non-trading day"         = "keep")
+                                                               "Keep non-trading day"         = "keep", 
+                                                               "Skip respective observations" = "skip")
                                    )
 )
