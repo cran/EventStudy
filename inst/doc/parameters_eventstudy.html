@@ -11,7 +11,7 @@
 
 <meta name="author" content="Dr. Simon Müller" />
 
-<meta name="date" content="2019-03-02" />
+<meta name="date" content="2019-03-05" />
 
 <title>Event Study: Parameters</title>
 
@@ -1613,7 +1613,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Event Study: Parameters</h1>
 <h4 class="author"><em>Dr. Simon Müller</em></h4>
-<h4 class="date"><em>2019-03-02</em></h4>
+<h4 class="date"><em>2019-03-05</em></h4>
 
 </div>
 
@@ -1653,7 +1653,8 @@ div.tocify {
 <a class="sourceLine" id="cb3-12" title="12">                                                           <span class="st">&quot;market_data&quot;</span>  =<span class="st"> &quot;03_marketData.csv&quot;</span>),</a>
 <a class="sourceLine" id="cb3-13" title="13">                                         <span class="dt">downloadFiles =</span> T, <span class="co"># download result files</span></a>
 <a class="sourceLine" id="cb3-14" title="14">                                         <span class="dt">checkFiles    =</span> T) <span class="co"># check input files                     </span></a></code></pre></div>
-<p>When you set your url or api key by <em>EventStudy.URL</em> and <em>EventStudy.KEY</em> then just leave input parameters in <em>.<span class="math inline">\(new()* and *.\)</span>authentication()</em> empty.</p>
+<p>When you set your url or api key by <em>EventStudy.URL</em> and <em>EventStudy.KEY</em> then just leave input parameters in <em>.<span class="math inline">\(new()* and *.\)</span>authentication()</em> empty. A default key and url can be set by:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">options</span>(<span class="dt">EventStudy.KEY =</span> apiKey)</a></code></pre></div>
 </div>
 <div id="general-event-study-parameters" class="section level1">
 <h1>General Event Study Parameters</h1>
@@ -1664,18 +1665,18 @@ div.tocify {
 <li><code>AVyCApplicationInput</code>: Volatility Event Study</li>
 </ul>
 <p>For the rest of this paragraph, we are working with a Return Event Study object. All parameters in this section can also applied to the other two objects.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">returnEstParams &lt;-<span class="st"> </span>ARCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">returnEstParams &lt;-<span class="st"> </span>ARCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
 <div id="return-file-type" class="section level2">
 <h2>Return File Type</h2>
 <p>The return type defines the type of the result file. Possible options are</p>
 <ul>
-<li><strong>csv</strong> (default): comma-separated file with <code>;</code> as delimiter</li>
-<li><strong>xls</strong>: Excel 2007</li>
-<li><strong>xlsx</strong>: Excel 2010 and newer</li>
-<li><strong>ods</strong>: OpenOffice Spreadsheet</li>
+<li><strong>csv</strong> (default): comma-separated file with <code>;</code> as delimiter,</li>
+<li><strong>xls</strong>: Excel 2007,</li>
+<li><strong>xlsx</strong>: Excel 2010 and newer, or</li>
+<li><strong>ods</strong>: OpenOffice Spreadsheet.</li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setResultFileType</span>(<span class="st">&quot;xlsx&quot;</span>)</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setResultFileType</span>(<span class="st">&quot;xlsx&quot;</span>)</a></code></pre></div>
 </div>
 <div id="return-type" class="section level2">
 <h2>Return Type</h2>
@@ -1683,8 +1684,8 @@ div.tocify {
 <li><strong>log</strong> (default): Return calculation by using log</li>
 <li><strong>simple</strong>: Simple return calculation</li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setReturnType</span>(<span class="st">&quot;simple&quot;</span>)</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setReturnType</span>(<span class="st">&quot;simple&quot;</span>)</a></code></pre></div>
 </div>
 <div id="adjustment-of-non-trading-days" class="section level2">
 <h2>Adjustment of Non-trading Days</h2>
@@ -1694,14 +1695,14 @@ div.tocify {
 <li><strong>keep</strong>: Keep non-trading day (Keep announcement dates even if they fall on a non-trading day (e.g., a weekend day))</li>
 <li><strong>skip</strong>: Skip respective observations (Skip observations with event dates falling on non-trading days (e.g., weekends))</li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setNonTradingDays</span>(<span class="st">&quot;earlier&quot;</span>)</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setNonTradingDays</span>(<span class="st">&quot;earlier&quot;</span>)</a></code></pre></div>
 </div>
 </div>
 <div id="abnormal-return-event-study" class="section level1">
 <h1>Abnormal Return Event Study</h1>
 <p>For performing Return Event Studies you need to initialize an <code>ARCApplicationInput</code> R6 object.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">returnEstParams &lt;-<span class="st"> </span>ARCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1">returnEstParams &lt;-<span class="st"> </span>ARCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
 <div id="benchmark-models" class="section level2">
 <h2>Benchmark Models</h2>
 <ul>
@@ -1713,8 +1714,8 @@ div.tocify {
 <li><strong>garch</strong>: GARCH (1, 1) Model</li>
 <li><strong>egarch</strong>: EGARCH (1, 1) Model</li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setBenchmarkModel</span>(<span class="st">&quot;mm-sw&quot;</span>)</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setBenchmarkModel</span>(<span class="st">&quot;mm-sw&quot;</span>)</a></code></pre></div>
 </div>
 <div id="test-statistics" class="section level2">
 <h2>Test Statistics</h2>
@@ -1793,14 +1794,14 @@ div.tocify {
 <li>caargsignz</li>
 </ul></li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setTestStatistics</span>(<span class="kw">c</span>(<span class="st">&quot;aarptlz&quot;</span>, <span class="st">&quot;aarrankz&quot;</span>))</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1">returnEstParams<span class="op">$</span><span class="kw">setTestStatistics</span>(<span class="kw">c</span>(<span class="st">&quot;aarptlz&quot;</span>, <span class="st">&quot;aarrankz&quot;</span>))</a></code></pre></div>
 </div>
 </div>
 <div id="abnormal-volume-event-study" class="section level1">
 <h1>Abnormal Volume Event Study</h1>
 <p>For performing Return Event Studies you need to initialize an <code>AVCApplicationInput</code> R6 object.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1">volumeEstParams &lt;-<span class="st"> </span>AVCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">volumeEstParams &lt;-<span class="st"> </span>AVCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
 <div id="benchmark-models-1" class="section level2">
 <h2>Benchmark Models</h2>
 <ul>
@@ -1810,8 +1811,8 @@ div.tocify {
 <li><strong>ff3fm</strong>: Fama-French 3 Factor Model</li>
 <li><strong>ffm4fm</strong>: Fama-French-Momentum 4 Factor Model</li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">volumeEstParams<span class="op">$</span><span class="kw">setBenchmarkModel</span>(<span class="st">&quot;mm-sw&quot;</span>)</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1">volumeEstParams<span class="op">$</span><span class="kw">setBenchmarkModel</span>(<span class="st">&quot;mm-sw&quot;</span>)</a></code></pre></div>
 </div>
 <div id="test-statistics-1" class="section level2">
 <h2>Test Statistics</h2>
@@ -1890,14 +1891,14 @@ div.tocify {
 <li>caargsignz</li>
 </ul></li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1">volumeEstParams<span class="op">$</span><span class="kw">setTestStatistics</span>(<span class="kw">c</span>(<span class="st">&quot;aarptlz&quot;</span>, <span class="st">&quot;aarrankz&quot;</span>))</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1">volumeEstParams<span class="op">$</span><span class="kw">setTestStatistics</span>(<span class="kw">c</span>(<span class="st">&quot;aarptlz&quot;</span>, <span class="st">&quot;aarrankz&quot;</span>))</a></code></pre></div>
 </div>
 </div>
 <div id="abnormal-volatility-event-study" class="section level1">
 <h1>Abnormal Volatility Event Study</h1>
 <p>For performing Return Event Studies you need to initialize an <code>AVyCApplicationInput</code> R6 object.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1">volatilityEstParams &lt;-<span class="st"> </span>AVyCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1">volatilityEstParams &lt;-<span class="st"> </span>AVyCApplicationInput<span class="op">$</span><span class="kw">new</span>()</a></code></pre></div>
 <div id="benchmark-models-2" class="section level2">
 <h2>Benchmark Models</h2>
 <ul>
@@ -1933,8 +1934,8 @@ div.tocify {
 <li>aarcscart</li>
 </ul></li>
 </ul>
-<p>Usage:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1">volatilityEstParams<span class="op">$</span><span class="kw">setTestStatistics</span>(<span class="kw">c</span>(<span class="st">&quot;aarptlz&quot;</span>, <span class="st">&quot;aarrankz&quot;</span>))</a></code></pre></div>
+<p><strong>Usage:</strong></p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1">volatilityEstParams<span class="op">$</span><span class="kw">setTestStatistics</span>(<span class="kw">c</span>(<span class="st">&quot;aarptlz&quot;</span>, <span class="st">&quot;aarrankz&quot;</span>))</a></code></pre></div>
 </div>
 </div>
 <div id="how-to-cite" class="section level1">

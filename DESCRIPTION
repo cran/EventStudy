@@ -3,8 +3,8 @@ Type: Package
 Title: Event Study Analysis
 Description: Perform Event Studies from through our <http://EventStudyTools.com> Application Programming Interface, parse the results, visualize it, and / or use the results in further analysis.
 Author: Dr. Simon Mueller
-Date: 2019-03-01
-Version: 0.35
+Date: 2019-03-05
+Version: 0.36
 Encoding: UTF-8
 URL: http://eventstudytools.com
 Maintainer: Dr. Simon Mueller <simon.mueller@muon-stat.com>
@@ -19,6 +19,6 @@ LazyData: true
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-03-02 01:04:38 UTC; simonm
+Packaged: 2019-03-05 22:54:08 UTC; simonm
 Repository: CRAN
-Date/Publication: 2019-03-02 05:10:03 UTC
+Date/Publication: 2019-03-14 12:13:31 UTC

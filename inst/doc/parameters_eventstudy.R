@@ -24,6 +24,9 @@ knitr::opts_chunk$set(echo = TRUE)
 #                                           checkFiles    = T) # check input files
 
 ## ---- eval=FALSE---------------------------------------------------------
+#  options(EventStudy.KEY = apiKey)
+
+## ---- eval=FALSE---------------------------------------------------------
 #  returnEstParams <- ARCApplicationInput$new()
 
 ## ---- eval=FALSE---------------------------------------------------------
