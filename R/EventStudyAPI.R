@@ -15,11 +15,10 @@
 # // along with EventStudy  If not, see <http://www.gnu.org/licenses/>.
 #' @name EventStudyAPI
 #' 
-#' @title API for \url{www.eventstudytools.com}
+#' @title API for \url{https://www.eventstudytools.com}
 #' 
 #' @description R interface for performing Event Studies on 
-#' \url{www.eventstudytools.com}. Please get a free API key from our website:
-#' \url{https://www.eventstudytools.com/api-key}.
+#' \url{https://www.eventstudytools.com}. 
 #'
 #' For more details see the help vignette:
 #' \code{vignette("introduction_eventstudy", package = "EventStudy")}
@@ -37,7 +36,7 @@
 #'   \item{\code{authentication(apiKey)}}{This method is used to 
 #'   authenticate at \code{apiServerUrl}. A valid \code{APIkey} is 
 #'   required. You can download a free key on our website: 
-#'   \url{www.eventstudytools.com}}
+#'   \url{https://www.eventstudytools.com}}
 #'   \item{\code{performEventStudy(estParam)}}{This method starts an Event Study. 
 #'   This method does all the analysis work for you}
 #'   \item{\code{performDefaultEventStudy()}}{This method starts a default 
@@ -129,8 +128,8 @@ EventStudyAPI <- R6::R6Class(classname = "EventStudyAPI",
                                  
                                  ch <- doHttrRequest(url          = httr::modify_url(private$apiServerUrl, path = "/task/create"), 
                                                      request_type = "POST", 
-                                                     config = httr::add_headers(c("Content-Type"   = "application/json", 
-                                                                                             "X-Customer-Key" = apiKey))
+                                                     config       = httr::add_headers(c("Content-Type"   = "application/json", 
+                                                                                        "X-Customer-Key" = apiKey))
                                  )
                                  
                                  # get token & check it
@@ -356,7 +355,7 @@ EventStudyAPI <- R6::R6Class(classname = "EventStudyAPI",
                                    }
                                    
                                    self$resultFiles %>% 
-                                     dplyr::mutate(id = row_number()) %>% 
+                                     dplyr::mutate(id = dplyr::row_number()) %>% 
                                      tidyr::nest(-id) %>% 
                                      dplyr::mutate(results = purrr::map(data, .f = function(x) {
                                        message('Downloading: ', x$name)
@@ -393,7 +392,10 @@ EventStudyAPI <- R6::R6Class(classname = "EventStudyAPI",
                                  if (length(id)) {
                                    estParser$parseCAR(self$resultFiles$url[id])
                                  }
-                                 
+                                 id <- which(stringr::str_detect(self$resultFiles$basename, "^caar_"))
+                                 if (length(id)) {
+                                   estParser$parseCAAR(self$resultFiles$url[id])
+                                 }
                                  
                                  # avyc parsing
                                  id <- which(stringr::str_detect(self$resultFiles$basename, "^avy_"))
@@ -405,7 +407,7 @@ EventStudyAPI <- R6::R6Class(classname = "EventStudyAPI",
                                    estParser$parseAAR(self$resultFiles$url[id])
                                  }
                                  
-                                 # TODO: av paring
+                                 # TODO: av parsing
                                  
                                  estParser
                                },

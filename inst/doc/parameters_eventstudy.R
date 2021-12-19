@@ -1,13 +1,13 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  options(EventStudy.URL = "http://api.eventstudytools.com")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  getOption("EventStudy.tryAttempts")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  apiUrl <- "http://api.eventstudytools.com"
 #  apiKey <- "Please insert your key here"
 #  
@@ -23,42 +23,42 @@ knitr::opts_chunk$set(echo = TRUE)
 #                                           downloadFiles = T, # download result files
 #                                           checkFiles    = T) # check input files
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  options(EventStudy.KEY = apiKey)
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  returnEstParams <- ARCApplicationInput$new()
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  returnEstParams$setResultFileType("xlsx")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  returnEstParams$setReturnType("simple")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  returnEstParams$setNonTradingDays("earlier")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  returnEstParams <- ARCApplicationInput$new()
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  returnEstParams$setBenchmarkModel("mm-sw")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  returnEstParams$setTestStatistics(c("aarptlz", "aarrankz"))
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  volumeEstParams <- AVCApplicationInput$new()
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  volumeEstParams$setBenchmarkModel("mm-sw")
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  volumeEstParams$setTestStatistics(c("aarptlz", "aarrankz"))
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  volatilityEstParams <- AVyCApplicationInput$new()
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  volatilityEstParams$setTestStatistics(c("aarptlz", "aarrankz"))
 

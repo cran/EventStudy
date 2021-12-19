@@ -1,16 +1,16 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
-## ---- message=F, echo=T, eval=FALSE--------------------------------------
+## ---- message=F, echo=T, eval=FALSE-------------------------------------------
 #  library(tidyquant)
 #  library(dplyr)
 #  library(readr)
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  startDate <- "2014-05-01"
 #  endDate <- "2015-12-31"
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  # Firm Data
 #  firmSymbols <- c("VOW.DE", "NSU.DE", "PAH3.DE", "BMW.DE", "DAI.DE")
 #  firmNames <- c("VW preferred", "Audi", "Porsche Automobil Hld", "BMW", "Daimler")
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #    dplyr::mutate(date = format(date, "%d.%m.%Y")) -> firmData
 #  knitr::kable(head(firmData), pad=0)
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  # Index Data
 #  indexSymbol <- c("^GDAXI")
 #  indexName <- c("DAX")
@@ -29,7 +29,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #  indexData$symbol <- "DAX"
 #  knitr::kable(head(indexData), pad=0)
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  # Price files for firms and market
 #  firmData %>%
 #    dplyr::select(symbol, date, adjusted) %>%
@@ -56,14 +56,14 @@ knitr::opts_chunk$set(echo = TRUE)
 #                       delim     = ";",
 #                       col_names = F)
 
-## ---- eval=FALSE---------------------------------------------------------
+## ---- eval=FALSE--------------------------------------------------------------
 #  group <- c(rep("VW Group", 3), rep("Other", 2))
 #  request <- cbind(c(1:5), firmSymbols, rep(indexName, 5), rep("18.09.2015", 5), group, rep(-10, 5), rep(10, 5), rep(-11, 5), rep(250, 5))
 #  request %>%
 #    as.data.frame() %>%
 #    readr::write_delim("01_requestFile.csv", delim = ";", col_names = F)
 
-## ---- message=F, eval=F--------------------------------------------------
+## ---- message=F, eval=F-------------------------------------------------------
 #  key <- "573e58c665fcc08cc6e5a660beaad0cb"
 #  
 #  library(EventStudy)
@@ -89,13 +89,13 @@ knitr::opts_chunk$set(echo = TRUE)
 #                                        dataFiles     = dataFiles,
 #                                        downloadFiles = T)
 
-## ---- eval=F-------------------------------------------------------------
+## ---- eval=F------------------------------------------------------------------
 #  knitr::kable(head(arEventStudy$arResults))
 
-## ---- eval=F-------------------------------------------------------------
+## ---- eval=F------------------------------------------------------------------
 #  knitr::kable(head(arEventStudy$aarResults))
 
-## ---- message=F, eval=F--------------------------------------------------
+## ---- message=F, eval=F-------------------------------------------------------
 #  est <- EventStudyAPI$new()
 #  est$authentication(apiKey = key)
 #  
@@ -106,17 +106,4 @@ knitr::opts_chunk$set(echo = TRUE)
 #  avycEventStudy <- est$performEventStudy(estParams    = esaParams,
 #                                         dataFiles     = dataFiles,
 #                                         downloadFiles = T)
-
-## ---- eval=F-------------------------------------------------------------
-#  # est <- EventStudyAPI$new()
-#  # est$authentication(apiKey = key)
-#  #
-#  # # get & set parameters for abnormal return Event Study
-#  # esaParams <- EventStudy::AVCApplicationInput$new()
-#  # esaParams$setResultFileType("csv")
-#  #
-#  # avEventStudy <- est$performEventStudy(estParams = esaParams,
-#  #                       dataFiles = c("request_file" = "01_requestFile.csv",
-#  #                                     "firm_data"    = "02_firmDataVolume.csv",
-#  #                                     "market_data"  = "03_marketDataVolume.csv"))
 

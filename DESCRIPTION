@@ -1,12 +1,12 @@
 Package: EventStudy
 Type: Package
 Title: Event Study Analysis
-Description: Perform Event Studies from through our <http://EventStudyTools.com> Application Programming Interface, parse the results, visualize it, and / or use the results in further analysis.
+Description: Perform Event Studies from through our <https://EventStudyTools.com> Application Programming Interface, parse the results, visualize it, and / or use the results in further analysis.
 Author: Dr. Simon Mueller
-Date: 2019-03-05
-Version: 0.36
+Date: 2021-12-17
+Version: 0.37
 Encoding: UTF-8
-URL: http://eventstudytools.com
+URL: https:://data-zoo.de
 Maintainer: Dr. Simon Mueller <simon.mueller@muon-stat.com>
 License: GPL (>= 2)
 Depends: ggplot2
@@ -15,10 +15,10 @@ Imports: shiny, miniUI, rstudioapi, httr, curl, jsonlite, magrittr (>=
         tidyquant, RColorBrewer, stringr, purrr, readr, openxlsx
 Suggests: knitr, rmarkdown
 BugReports: https://github.com/EventStudyTools/api-wrapper.r/issues
-LazyData: true
-RoxygenNote: 6.1.1
+LazyData: false
+RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-03-05 22:54:08 UTC; simonm
+Packaged: 2021-12-19 21:25:23 UTC; simon
 Repository: CRAN
-Date/Publication: 2019-03-14 12:13:31 UTC
+Date/Publication: 2021-12-20 00:02:03 UTC
