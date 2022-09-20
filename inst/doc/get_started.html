@@ -9,11 +9,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Dr. Simon Müller" />
+<meta name="author" content="Dr. Markus Schimmer and Dr. Simon Müller" />
 
 <meta name="date" content="2022-09-20" />
 
-<title>Howto: An Example with Data Preparation</title>
+<title>Get Started</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1601,163 +1601,427 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Howto: An Example with Data
-Preparation</h1>
-<h4 class="author">Dr. Simon Müller</h4>
+<h1 class="title toc-ignore">Get Started</h1>
+<h4 class="author">Dr. Markus Schimmer and Dr. Simon Müller</h4>
 <h4 class="date">2022-09-20</h4>
 
 </div>
 
 
-<div id="overview" class="section level1">
-<h1>Overview</h1>
-<p>Based on the Dieselgate scandal we want to show you how you are able
-to fetch data in R, perform an Event Study, and do some basic plots with
-our R package.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyquant)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span></code></pre></div>
+<div id="motivation" class="section level1">
+<h1>Motivation</h1>
+<p>The attached sample data and request files were constructed to
+illustrate the use of the EventStudyTools R-package.</p>
+<p>The files hold data about the addition of several well known firms to
+the S&amp;P 500 index in the late 1990s. With this data, the R package
+will investigate for you the question whether a company’s stock value
+increases if the firm is added to the S&amp;P 500 index. This is a
+common research question and has been addressed, among others, by
+Anthony W. Lynch and Richard R. Mendenha in a 1997 study: They found a
+positive effect of about 3.8% over the period starting the day after the
+announcement and ending the day before the effective date of the
+change.</p>
+<p>You can use our R-package to easily investigate such and similar
+questions.</p>
 </div>
-<div id="data-preparation" class="section level1">
-<h1>Data Preparation</h1>
-<p>We use the package tidyquant to fetch the automotive stock data from
-Yahoo Finance. As we cannot get the full volume size from this companies
-through Yahoo Finance API, we do not perform a volume Event Study in
-this vignette.</p>
-<p>Let’s define the window from which we want to fetch the data of the
-German auto companies.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>startDate <span class="ot">&lt;-</span> <span class="st">&quot;2014-05-01&quot;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>endDate <span class="ot">&lt;-</span> <span class="st">&quot;2015-12-31&quot;</span></span></code></pre></div>
-<p>We focus us on the big five motor manufacturers in Germany,
-namely</p>
+<div id="perform-an-event-study-from-r" class="section level1">
+<h1>Perform an Event Study from R</h1>
+<div id="authentication" class="section level2">
+<h2>Authentication</h2>
+<p>For performing an Event Study with our API you need:</p>
 <ul>
-<li>VW Group
+<li><strong>API url</strong> (defaults to
+<code>http://api.eventstudytools.com</code>)</li>
+<li><strong>API key</strong></li>
+</ul>
+<p>You get an API key from our website <a href="https://www.eventstudytools.com/api-access">EventStudyTools</a>.
+In the first step we need to authenticate to the web API. There are
+three ways to handle this two parameters:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>apiUrl <span class="ot">&lt;-</span> <span class="st">&quot;http://api.eventstudytools.com&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>apiKey <span class="ot">&lt;-</span> <span class="st">&quot;Please insert your key here&quot;</span></span></code></pre></div>
+<p><strong>Option 1 and 2:</strong> You can save API key and URL in the
+<code>options</code> object</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The URL is already set by default</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># options(EventStudy.URL = apiUrl)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">EventStudy.KEY =</span> apiKey)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># use EventStudy estAPIKey function</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">estAPIKey</span>(apiKey)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize object</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>estSetup <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>()</span></code></pre></div>
+<p><strong>Option 2:</strong> Set the API Key and URL directly during
+the <code>EventStudyAPI</code> <code>R6-class</code> initialization</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Setup API Connection</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>estSetup <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>(apiUrl)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>estSetup<span class="sc">$</span><span class="fu">authentication</span>(apiKey)</span></code></pre></div>
+<p>This API package is designed to perform all analyses we provide on
+our website. Furthermore, all parameters can be set. You are able to set
+every parameter in R (we will provide more details later), or you can
+perform a fast Event Study with default parameters.</p>
+<div id="event-study-with-defaults-parameters" class="section level3">
+<h3>Event Study with Defaults Parameters</h3>
+<p>There will be soon a separate vignette for setting parameters.</p>
+</div>
+</div>
+<div id="event-study-types" class="section level2">
+<h2>Event Study Types</h2>
+<p>Our API offers different types of Event Studies:</p>
 <ul>
-<li>VW</li>
-<li>Audi</li>
-<li>Porsche</li>
+<li>Return Event Study: <code>arc</code></li>
+<li>Trading Volume Event Study: <code>avc</code></li>
+<li>Abnormal Volatility Event Study: <code>avyc</code></li>
+</ul>
+<p>Default parameters for all type of above Event Studies are:</p>
+<ul>
+<li>Benchmark model: Market Model for <code>arc</code> and
+<code>avc</code> and GARCH(1, 1) Model for <code>avyc</code></li>
+<li>Statistics: All available test statistics are calculated</li>
+<li>Result file type: <code>csv</code></li>
+<li>Return type calculation: <code>log</code></li>
+<li>Handling non-trading days: <code>later</code></li>
+</ul>
+<p>The type of Event Study can be set by parameter:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>estType <span class="ot">&lt;-</span> <span class="st">&quot;arc&quot;</span></span></code></pre></div>
+</div>
+<div id="data-files" class="section level2">
+<h2>Data Files</h2>
+<p>By default all data files must be named as follows. Furthermore, they
+have to be in the current directory:</p>
+<ul>
+<li><code>01_RequestFile.csv</code></li>
+<li><code>02_firmData.csv</code></li>
+<li><code>03_MarketData.csv</code></li>
+</ul>
+<p>You are also able to set custom file names and paths by defining it
+in a named vector:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>dataFiles <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;request_file&quot;</span> <span class="ot">=</span> <span class="st">&quot;01_RequestFile.csv&quot;</span>, </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;firm_data&quot;</span>    <span class="ot">=</span> <span class="st">&quot;02_firmData.csv&quot;</span>, </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;market_data&quot;</span>  <span class="ot">=</span> <span class="st">&quot;03_MarketData.csv&quot;</span>)</span></code></pre></div>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
+<p>All results will be written by default into the directory
+<code>./results</code>. You can easily change this path by setting it as
+a parameter:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>resultPath <span class="ot">&lt;-</span> <span class="st">&quot;results&quot;</span></span></code></pre></div>
+<p><strong>Attention</strong></p>
+<p>If the <code>resultPath</code> do not exist, the R package will
+create this directory.</p>
+</div>
+<div id="performing-the-event-study" class="section level2">
+<h2>Performing the Event Study</h2>
+<p>Finally, the Event Study is performed by:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>estResult <span class="ot">&lt;-</span> estSetup<span class="sc">$</span><span class="fu">performDefaultEventStudy</span>(<span class="at">estType    =</span> estType,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                                               <span class="at">dataFiles  =</span> dataFiles, </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                                               <span class="at">destDir    =</span> resultPath)</span></code></pre></div>
+<p>It will write all result files into the result directory.
+Furthermore, results will be parsed into a R object.</p>
+</div>
+</div>
+<div id="data-file-description" class="section level1">
+<h1>Data File Description</h1>
+<p>For performing an Event Study we need three files (file names can be
+chosen arbitrarily):</p>
+<ol style="list-style-type: decimal">
+<li>A request file where the structure of the Event Study is
+defined</li>
+<li>A firm data file containing the stock data for each firm defined in
+the request file</li>
+<li>A market data file containing the reference market data (multiple
+reference markets per study are possible)</li>
+</ol>
+<p>All files must be saved without header, semi-colon separated and
+dates has to be in following format: <code>30.04.1997</code>. In next
+section we will describe the file structure based on the S&amp;P 500
+example Event Study more detailed. You always find more information (if
+necessary) on our website: <a href="https://www.eventstudytools.com/instructions-axc">EventStudyTools</a>.</p>
+<p>We added the S&amp;P 500 example Event Study to this package. The
+three necessary files can be easily generated by following command:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">getSP500ExampleFiles</span>()</span></code></pre></div>
+<p>We named the request and data files in following manner:</p>
+<ul>
+<li><code>01_RequestFile.csv</code></li>
+<li><code>02_FirmData.csv</code></li>
+<li><code>03_MarketData.csv</code></li>
+</ul>
+<p>In your analysis, you can name them as you want.</p>
+<div id="event-definitions-01_requestfile.csv" class="section level2">
+<h2>Event Definitions: <code>01_RequestFile.csv</code></h2>
+<p>This csv file contains the event definitions. It contains 9 columns.
+The order must be in the following way, as the columns are not named in
+the csv.</p>
+<ul>
+<li><strong>Event ID</strong> [Integer]: A unique event identifier</li>
+<li><strong>Firm ID</strong> [String]: The firm name or stock ID. This
+ID must match the ID in the firm data</li>
+<li><strong>Market ID</strong> [String]: The reference market ID. This
+ID must match the ID in the market data</li>
+<li><strong>Event Date</strong> [<code>30.04.1997</code>]: Date of the
+event</li>
+<li><strong>Grouping Variable</strong> [String]: This column is used to
+group events. Most test statistics are based on looking at groups.</li>
+<li><strong>Start Event Window</strong> [Integer]: This integer value
+defines the start of the event window. This value must smaller or equal
+zero (e.g. trading days before event).</li>
+<li><strong>End Event Window</strong> [Integer]: This integer value
+defines the end of the event window. This value must greater or equal
+zero (e.g. trading days after event).</li>
+<li><strong>End of Estimation Window</strong> [Integer]: This negative
+value defines the end of the estimation window (counted from event
+day).</li>
+<li><strong>Estimation Window Length</strong> [Integer]: Length of the
+estimation window</li>
+</ul>
+<p>In the following example, we have an event window of
+<code>[-2, 2]</code> (an event window of length <code>5</code>), an
+estimation window of length <code>120</code>, and the estimation window
+ends <code>11</code> days before the event.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_delim</span>(<span class="st">&quot;01_RequestFile.csv&quot;</span>, <span class="at">col_names =</span> F, <span class="at">delim =</span> <span class="st">&quot;;&quot;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Event ID&quot;</span>, <span class="st">&quot;Firm ID&quot;</span>, <span class="st">&quot;Market ID&quot;</span>, <span class="st">&quot;Event Date&quot;</span>, <span class="st">&quot;Grouping Variable&quot;</span>, <span class="st">&quot;Start Event Window&quot;</span>, <span class="st">&quot;End Event Window&quot;</span>, <span class="st">&quot;End of Estimation Window&quot;</span>, <span class="st">&quot;Estimation Window Length&quot;</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(df), <span class="at">pad=</span><span class="dv">0</span>)</span></code></pre></div>
+<table>
+<colgroup>
+<col width="5%" />
+<col width="14%" />
+<col width="6%" />
+<col width="6%" />
+<col width="11%" />
+<col width="12%" />
+<col width="10%" />
+<col width="16%" />
+<col width="16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">Event ID</th>
+<th align="left">Firm ID</th>
+<th align="left">Market ID</th>
+<th align="left">Event Date</th>
+<th align="left">Grouping Variable</th>
+<th align="right">Start Event Window</th>
+<th align="right">End Event Window</th>
+<th align="right">End of Estimation Window</th>
+<th align="right">Estimation Window Length</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">75510</td>
+<td align="left">Adobe Systems</td>
+<td align="left">SP500</td>
+<td align="left">30.04.1997</td>
+<td align="left">Addition</td>
+<td align="right">-2</td>
+<td align="right">2</td>
+<td align="right">-11</td>
+<td align="right">120</td>
+</tr>
+<tr class="even">
+<td align="right">64390</td>
+<td align="left">Progressive</td>
+<td align="left">SP500</td>
+<td align="left">25.07.1997</td>
+<td align="left">Addition</td>
+<td align="right">-2</td>
+<td align="right">2</td>
+<td align="right">-11</td>
+<td align="right">120</td>
+</tr>
+<tr class="odd">
+<td align="right">23473</td>
+<td align="left">Cincinnati</td>
+<td align="left">SP500</td>
+<td align="left">16.12.1997</td>
+<td align="left">Addition</td>
+<td align="right">-2</td>
+<td align="right">2</td>
+<td align="right">-11</td>
+<td align="right">120</td>
+</tr>
+<tr class="even">
+<td align="right">70500</td>
+<td align="left">Coca-Cola Enterprises</td>
+<td align="left">SP500</td>
+<td align="left">01.10.1998</td>
+<td align="left">Addition</td>
+<td align="right">-2</td>
+<td align="right">2</td>
+<td align="right">-11</td>
+<td align="right">120</td>
+</tr>
+<tr class="odd">
+<td align="right">70519</td>
+<td align="left">Travelers Group</td>
+<td align="left">SP500</td>
+<td align="left">01.10.1998</td>
+<td align="left">Addition</td>
+<td align="right">-2</td>
+<td align="right">2</td>
+<td align="right">-11</td>
+<td align="right">120</td>
+</tr>
+<tr class="even">
+<td align="right">76149</td>
+<td align="left">Safeway</td>
+<td align="left">SP500</td>
+<td align="left">05.11.1998</td>
+<td align="left">Addition</td>
+<td align="right">-2</td>
+<td align="right">2</td>
+<td align="right">-11</td>
+<td align="right">120</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attention</strong></p>
+<p>The first column (Event IDs) must be unique and numeric.</p>
+</div>
+<div id="firm-data-02_firmdata.csv" class="section level2">
+<h2>Firm Data: <code>02_FirmData.csv</code></h2>
+<p>The stock data for each firm defined in the request file. It contains
+3 columns.</p>
+<ul>
+<li><strong>Firm ID</strong> [String]: The firm or stock ID. This ID
+must match the ID in the Firm ID in the request file.</li>
+<li><strong>Date</strong> [<code>30.04.1997</code>]: Date of the closing
+price.</li>
+<li><strong>Closing Price</strong> [Double]: Closing price of volume of
+that day.</li>
+</ul>
+<p>The following table shows the first <code>20</code> entries of our
+example firm data.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_delim</span>(<span class="st">&quot;02_FirmData.csv&quot;</span>, <span class="at">col_names =</span> F, <span class="at">delim =</span> <span class="st">&quot;;&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Firm ID&quot;</span>, <span class="st">&quot;Date&quot;</span>, <span class="st">&quot;Closing Price&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(df))</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Firm ID</th>
+<th align="left">Date</th>
+<th align="right">Closing Price</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Cincinnati</td>
+<td align="left">01.10.1996</td>
+<td align="right">58.000</td>
+</tr>
+<tr class="even">
+<td align="left">Cincinnati</td>
+<td align="left">02.10.1996</td>
+<td align="right">57.000</td>
+</tr>
+<tr class="odd">
+<td align="left">Cincinnati</td>
+<td align="left">03.10.1996</td>
+<td align="right">56.750</td>
+</tr>
+<tr class="even">
+<td align="left">Cincinnati</td>
+<td align="left">04.10.1996</td>
+<td align="right">57.500</td>
+</tr>
+<tr class="odd">
+<td align="left">Cincinnati</td>
+<td align="left">07.10.1996</td>
+<td align="right">57.625</td>
+</tr>
+<tr class="even">
+<td align="left">Cincinnati</td>
+<td align="left">08.10.1996</td>
+<td align="right">57.750</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="firm-data-03_marketdata.csv" class="section level2">
+<h2>Firm Data: <code>03_MarketData.csv</code></h2>
+<p>This file is similary structured as <code>02_FirmData.csv</code>:</p>
+<ul>
+<li><strong>Market ID</strong> [String]: The market ID or stock ID. This
+ID must match the ID in the Market ID in the request file.</li>
+<li><strong>Date</strong> [<code>30.04.1997</code>]: Date of the closing
+price.</li>
+<li><strong>Closing Price</strong> [Double]: Closing price of volume of
+that day.</li>
+</ul>
+<p>The following table shows the first <code>20</code> entries of our
+example firm data.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_delim</span>(<span class="st">&quot;03_MarketData.csv&quot;</span>, <span class="at">col_names =</span> F, <span class="at">delim =</span> <span class="st">&quot;;&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Market ID&quot;</span>, <span class="st">&quot;Date&quot;</span>, <span class="st">&quot;Closing Price&quot;</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(df))</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Market ID</th>
+<th align="left">Date</th>
+<th align="right">Closing Price</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">SP500</td>
+<td align="left">30.09.1996</td>
+<td align="right">100.0000</td>
+</tr>
+<tr class="even">
+<td align="left">SP500</td>
+<td align="left">01.10.1996</td>
+<td align="right">100.2575</td>
+</tr>
+<tr class="odd">
+<td align="left">SP500</td>
+<td align="left">02.10.1996</td>
+<td align="right">100.9747</td>
+</tr>
+<tr class="even">
+<td align="left">SP500</td>
+<td align="left">03.10.1996</td>
+<td align="right">100.7958</td>
+</tr>
+<tr class="odd">
+<td align="left">SP500</td>
+<td align="left">04.10.1996</td>
+<td align="right">102.0587</td>
+</tr>
+<tr class="even">
+<td align="left">SP500</td>
+<td align="left">07.10.1996</td>
+<td align="right">102.3380</td>
+</tr>
+</tbody>
+</table>
+<p>You are also able to apply a <em>Fama-French 3-Factor Model</em> or a
+<em>Fama-French Momentum-4-Factor Model</em>. This will change the
+necessary data you need for performing an Event Study (e.g. by adding
+Fama-French Factors). You find more information at <a href="https://www.eventstudytools.com/instructions-axc" class="uri">https://www.eventstudytools.com/instructions-axc</a>.</p>
+</div>
+</div>
+<div id="more-vignettes" class="section level1">
+<h1>More Vignettes</h1>
+<ol style="list-style-type: decimal">
+<li>Event Study: Parameters: In this Vignette we show how you can set
+parameters and which parameters are allowed.</li>
+<li>Data Preparation: In this Vignette we show you how to get and
+prepare data for your Event Study from R.</li>
+<li>RStudio Addins: We wrote a RStudio addin for performing different
+types of Event Studies
+<ul>
+<li>Abnormal Return Event Study</li>
+<li>Abnormal Volume Event Study</li>
+<li>Abnormal Volatility Event Study</li>
 </ul></li>
-<li>Daimler</li>
-<li>BMW</li>
-</ul>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Firm Data</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>firmSymbols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;VOW.DE&quot;</span>, <span class="st">&quot;NSU.DE&quot;</span>, <span class="st">&quot;PAH3.DE&quot;</span>, <span class="st">&quot;BMW.DE&quot;</span>, <span class="st">&quot;DAI.DE&quot;</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>firmNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;VW preferred&quot;</span>, <span class="st">&quot;Audi&quot;</span>, <span class="st">&quot;Porsche Automobil Hld&quot;</span>, <span class="st">&quot;BMW&quot;</span>, <span class="st">&quot;Daimler&quot;</span>)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>firmSymbols <span class="sc">%&gt;%</span> </span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  tidyquant<span class="sc">::</span><span class="fu">tq_get</span>(<span class="at">from =</span> startDate, <span class="at">to =</span> endDate) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">format</span>(date, <span class="st">&quot;%d.%m.%Y&quot;</span>)) <span class="ot">-&gt;</span> firmData</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(firmData), <span class="at">pad=</span><span class="dv">0</span>)</span></code></pre></div>
-<p>As reference market we choose the DAX.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Index Data</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>indexSymbol <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;^GDAXI&quot;</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>indexName <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;DAX&quot;</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>indexSymbol <span class="sc">%&gt;%</span> </span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  tidyquant<span class="sc">::</span><span class="fu">tq_get</span>(<span class="at">from =</span> startDate, <span class="at">to =</span> endDate) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">format</span>(date, <span class="st">&quot;%d.%m.%Y&quot;</span>)) <span class="ot">-&gt;</span> indexData</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>indexData<span class="sc">$</span>symbol <span class="ot">&lt;-</span> <span class="st">&quot;DAX&quot;</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(indexData), <span class="at">pad=</span><span class="dv">0</span>)</span></code></pre></div>
-<p>Now, after we have fetched all the data, we prepare the data files
-for the API call, as described in the introductionary vignette. We
-prepare in this step already the volume data for later purposes.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Price files for firms and market</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>firmData <span class="sc">%&gt;%</span> </span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, adjusted) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;02_firmDataPrice.csv&quot;</span>, </span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>indexData <span class="sc">%&gt;%</span> </span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, adjusted) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;03_marketDataPrice.csv&quot;</span>, </span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Volume files for firms and market</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>firmData <span class="sc">%&gt;%</span> </span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, volume) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;02_firmDataVolume.csv&quot;</span>, </span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>indexData <span class="sc">%&gt;%</span> </span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, volume) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;03_marketDataVolume.csv&quot;</span>, </span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span></code></pre></div>
-<p>Finally, we have to prepare the request file. The parameters for this
-Event Study are:</p>
-<ul>
-<li>Estimation window: 250</li>
-<li>Event window: -10 to 10</li>
-<li>Event date: 18.09.2015</li>
-</ul>
-<p>Details of the format can be found in the introductionary
-vignette.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>group <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">&quot;VW Group&quot;</span>, <span class="dv">3</span>), <span class="fu">rep</span>(<span class="st">&quot;Other&quot;</span>, <span class="dv">2</span>))</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>request <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>), firmSymbols, <span class="fu">rep</span>(indexName, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="st">&quot;18.09.2015&quot;</span>, <span class="dv">5</span>), group, <span class="fu">rep</span>(<span class="sc">-</span><span class="dv">10</span>, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="dv">10</span>, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="sc">-</span><span class="dv">11</span>, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="dv">250</span>, <span class="dv">5</span>))</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>request <span class="sc">%&gt;%</span> </span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="st">&quot;01_requestFile.csv&quot;</span>, <span class="at">delim =</span> <span class="st">&quot;;&quot;</span>, <span class="at">col_names =</span> F)</span></code></pre></div>
+</ol>
 </div>
-<div id="perform-event-studies-abnormal-return-volume-and-volatility" class="section level1">
-<h1>Perform Event Studies: Abnormal Return, Volume, and Volatility</h1>
-<p>After the preparation steps, we are now able to start the
-calculations. We use in all type of Event Studies the GARCH(1, 1) model.
-Please consider in your Event Studies that fitting this model is
-computationally expensive and delayed response from the API should be
-expected.</p>
-<div id="abnormal-return-event-study" class="section level2">
-<h2>Abnormal Return Event Study</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>key <span class="ot">&lt;-</span> <span class="st">&quot;573e58c665fcc08cc6e5a660beaad0cb&quot;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">authentication</span>(<span class="at">apiKey =</span> key)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># get &amp; set parameters for abnormal return Event Study</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># we use a garch model and csv as return</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Attention: fitting a GARCH(1, 1) model is compute intensive</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>esaParams <span class="ot">&lt;-</span> EventStudy<span class="sc">::</span>ARCApplicationInput<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>esaParams<span class="sc">$</span><span class="fu">setResultFileType</span>(<span class="st">&quot;csv&quot;</span>)</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>esaParams<span class="sc">$</span><span class="fu">setBenchmarkModel</span>(<span class="st">&quot;garch&quot;</span>)</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>dataFiles <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;request_file&quot;</span> <span class="ot">=</span> <span class="st">&quot;01_requestFile.csv&quot;</span>,</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;firm_data&quot;</span>    <span class="ot">=</span> <span class="st">&quot;02_firmDataPrice.csv&quot;</span>,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;market_data&quot;</span>  <span class="ot">=</span> <span class="st">&quot;03_marketDataPrice.csv&quot;</span>)</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co"># check data files, you can do it also in our R6 class</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>EventStudy<span class="sc">::</span><span class="fu">checkFiles</span>(dataFiles)</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co"># now let us perform the Event Study</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>arEventStudy <span class="ot">&lt;-</span> est<span class="sc">$</span><span class="fu">performEventStudy</span>(<span class="at">estParams     =</span> esaParams, </span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">dataFiles     =</span> dataFiles, </span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">downloadFiles =</span> T)</span></code></pre></div>
-<p>Now, you can use the downloaded CSV (or your preferred data format)
-files in your analysis. During the creation of the
-<code>arEventStudy</code> object we merge information from the request
-file, and the result files.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(arEventStudy<span class="sc">$</span>arResults))</span></code></pre></div>
-<p>The averaged abnormal return (aar) <code>data.frame</code> has the
-following shape:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(arEventStudy<span class="sc">$</span>aarResults))</span></code></pre></div>
-<p>You can find the statistic naming in
-<code>arEventStudy$aarStatistics</code>.</p>
-</div>
-<div id="abnormal-volatility-event-study" class="section level2">
-<h2>Abnormal Volatility Event Study</h2>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">authentication</span>(<span class="at">apiKey =</span> key)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># get &amp; set parameters for abnormal return Event Study</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>esaParams <span class="ot">&lt;-</span> EventStudy<span class="sc">::</span>AVyCApplicationInput<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>esaParams<span class="sc">$</span><span class="fu">setResultFileType</span>(<span class="st">&quot;csv&quot;</span>)</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>avycEventStudy <span class="ot">&lt;-</span> est<span class="sc">$</span><span class="fu">performEventStudy</span>(<span class="at">estParams    =</span> esaParams, </span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">dataFiles     =</span> dataFiles,</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">downloadFiles =</span> T)</span></code></pre></div>
-<p>The prepared <code>data.frames</code> in <code>avycEventStudy</code>
-have a similar shape as for the abnormal return Event Study.</p>
-</div>
+<div id="how-to-cite" class="section level1">
+<h1>How to Cite</h1>
+<p>Please cite our work in your <a href="https://eventstudytools.com/how-cite-eventstudytoolscom">publication</a>.</p>
 </div>
 
 

@@ -13,7 +13,7 @@
 
 <meta name="date" content="2022-09-20" />
 
-<title>Howto: An Example with Data Preparation</title>
+<title>Use Case: Dieselgate</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1601,8 +1601,7 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Howto: An Example with Data
-Preparation</h1>
+<h1 class="title toc-ignore">Use Case: Dieselgate</h1>
 <h4 class="author">Dr. Simon Müller</h4>
 <h4 class="date">2022-09-20</h4>
 
@@ -1617,13 +1616,10 @@ our R package.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyquant)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span></code></pre></div>
-</div>
-<div id="data-preparation" class="section level1">
-<h1>Data Preparation</h1>
 <p>We use the package tidyquant to fetch the automotive stock data from
-Yahoo Finance. As we cannot get the full volume size from this companies
-through Yahoo Finance API, we do not perform a volume Event Study in
-this vignette.</p>
+Yahoo Finance. As we cannot get the total volume size from these
+companies through Yahoo Finance API, we do not perform a Volume Event
+Study in this vignette.</p>
 <p>Let’s define the window from which we want to fetch the data of the
 German auto companies.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>startDate <span class="ot">&lt;-</span> <span class="st">&quot;2014-05-01&quot;</span></span>
@@ -1641,47 +1637,46 @@ namely</p>
 <li>BMW</li>
 </ul>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Firm Data</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>firmSymbols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;VOW.DE&quot;</span>, <span class="st">&quot;NSU.DE&quot;</span>, <span class="st">&quot;PAH3.DE&quot;</span>, <span class="st">&quot;BMW.DE&quot;</span>, <span class="st">&quot;DAI.DE&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>firmSymbols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;VOW.DE&quot;</span>, <span class="st">&quot;AUDVF&quot;</span>, <span class="st">&quot;PAH3.DE&quot;</span>, <span class="st">&quot;BMW.DE&quot;</span>, <span class="st">&quot;MBG.DE&quot;</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>firmNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;VW preferred&quot;</span>, <span class="st">&quot;Audi&quot;</span>, <span class="st">&quot;Porsche Automobil Hld&quot;</span>, <span class="st">&quot;BMW&quot;</span>, <span class="st">&quot;Daimler&quot;</span>)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>firmSymbols <span class="sc">%&gt;%</span> </span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  tidyquant<span class="sc">::</span><span class="fu">tq_get</span>(<span class="at">from =</span> startDate, <span class="at">to =</span> endDate) <span class="sc">%&gt;%</span> </span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">format</span>(date, <span class="st">&quot;%d.%m.%Y&quot;</span>)) <span class="ot">-&gt;</span> firmData</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(firmData), <span class="at">pad=</span><span class="dv">0</span>)</span></code></pre></div>
-<p>As reference market we choose the DAX.</p>
+<p>As a reference market, we choose the DAX.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Index Data</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>indexSymbol <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;^GDAXI&quot;</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>indexName <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;DAX&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>indexName <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;^GDAXI&quot;</span>)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>indexSymbol <span class="sc">%&gt;%</span> </span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  tidyquant<span class="sc">::</span><span class="fu">tq_get</span>(<span class="at">from =</span> startDate, <span class="at">to =</span> endDate) <span class="sc">%&gt;%</span> </span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">format</span>(date, <span class="st">&quot;%d.%m.%Y&quot;</span>)) <span class="ot">-&gt;</span> indexData</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>indexData<span class="sc">$</span>symbol <span class="ot">&lt;-</span> <span class="st">&quot;DAX&quot;</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(indexData), <span class="at">pad=</span><span class="dv">0</span>)</span></code></pre></div>
-<p>Now, after we have fetched all the data, we prepare the data files
-for the API call, as described in the introductionary vignette. We
-prepare in this step already the volume data for later purposes.</p>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(indexData), <span class="at">pad=</span><span class="dv">0</span>)</span></code></pre></div>
+<p>After we have fetched all the data, we prepare the data files for the
+API call, as described in the introductory vignette. We design in this
+step already the volume data for later purposes.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Price files for firms and market</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>firmData <span class="sc">%&gt;%</span> </span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, adjusted) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;02_firmDataPrice.csv&quot;</span>, </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">file      =</span> <span class="st">&quot;02_firmDataPrice.csv&quot;</span>, </span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>indexData <span class="sc">%&gt;%</span> </span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, adjusted) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;03_marketDataPrice.csv&quot;</span>, </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">file      =</span> <span class="st">&quot;03_marketDataPrice.csv&quot;</span>, </span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span>
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Volume files for firms and market</span></span>
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>firmData <span class="sc">%&gt;%</span> </span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, volume) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;02_firmDataVolume.csv&quot;</span>, </span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">file      =</span> <span class="st">&quot;02_firmDataVolume.csv&quot;</span>, </span>
 <span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>indexData <span class="sc">%&gt;%</span> </span>
 <span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(symbol, date, volume) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">path      =</span> <span class="st">&quot;03_marketDataVolume.csv&quot;</span>, </span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">write_delim</span>(<span class="at">file      =</span> <span class="st">&quot;03_marketDataVolume.csv&quot;</span>, </span>
 <span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>                     <span class="at">delim     =</span> <span class="st">&quot;;&quot;</span>, </span>
 <span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>                     <span class="at">col_names =</span> F)</span></code></pre></div>
 <p>Finally, we have to prepare the request file. The parameters for this
@@ -1691,7 +1686,7 @@ Event Study are:</p>
 <li>Event window: -10 to 10</li>
 <li>Event date: 18.09.2015</li>
 </ul>
-<p>Details of the format can be found in the introductionary
+<p>You can find details of the request file format in the introductory
 vignette.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>group <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="st">&quot;VW Group&quot;</span>, <span class="dv">3</span>), <span class="fu">rep</span>(<span class="st">&quot;Other&quot;</span>, <span class="dv">2</span>))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>request <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>), firmSymbols, <span class="fu">rep</span>(indexName, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="st">&quot;18.09.2015&quot;</span>, <span class="dv">5</span>), group, <span class="fu">rep</span>(<span class="sc">-</span><span class="dv">10</span>, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="dv">10</span>, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="sc">-</span><span class="dv">11</span>, <span class="dv">5</span>), <span class="fu">rep</span>(<span class="dv">250</span>, <span class="dv">5</span>))</span>
@@ -1702,17 +1697,17 @@ vignette.</p>
 <div id="perform-event-studies-abnormal-return-volume-and-volatility" class="section level1">
 <h1>Perform Event Studies: Abnormal Return, Volume, and Volatility</h1>
 <p>After the preparation steps, we are now able to start the
-calculations. We use in all type of Event Studies the GARCH(1, 1) model.
-Please consider in your Event Studies that fitting this model is
-computationally expensive and delayed response from the API should be
-expected.</p>
+calculations. We use the GARCH(1, 1) model in all types of Event
+Studies.</p>
 <div id="abnormal-return-event-study" class="section level2">
 <h2>Abnormal Return Event Study</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>key <span class="ot">&lt;-</span> <span class="st">&quot;573e58c665fcc08cc6e5a660beaad0cb&quot;</span></span>
+<p>The following lines perform the Event Study using our generated data.
+Our package places the results per default in the results folder.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>event_study_api_key <span class="ot">=</span> <span class="fu">Sys.getenv</span>(<span class="st">&quot;event_study_api_key&quot;</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">authentication</span>(<span class="at">apiKey =</span> key)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">authentication</span>(<span class="at">apiKey =</span> event_study_api_key)</span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># get &amp; set parameters for abnormal return Event Study</span></span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># we use a garch model and csv as return</span></span>
@@ -1726,37 +1721,62 @@ expected.</p>
 <span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;market_data&quot;</span>  <span class="ot">=</span> <span class="st">&quot;03_marketDataPrice.csv&quot;</span>)</span>
 <span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co"># check data files, you can do it also in our R6 class</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>EventStudy<span class="sc">::</span><span class="fu">checkFiles</span>(dataFiles)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="fu">checkFiles</span>(dataFiles)</span>
 <span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co"># now let us perform the Event Study</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>arEventStudy <span class="ot">&lt;-</span> est<span class="sc">$</span><span class="fu">performEventStudy</span>(<span class="at">estParams     =</span> esaParams, </span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">dataFiles     =</span> dataFiles, </span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">downloadFiles =</span> T)</span></code></pre></div>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">performEventStudy</span>(<span class="at">estParams     =</span> esaParams, </span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>                      <span class="at">dataFiles     =</span> dataFiles, </span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>                      <span class="at">downloadFiles =</span> T)</span></code></pre></div>
+<p>After the analysis, you may continue your work in your toolset or
+parse the result files.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>estParser <span class="ot">&lt;-</span> ResultParser<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>analysis_report <span class="ot">=</span> estParser<span class="sc">$</span><span class="fu">get_analysis_report</span>(<span class="st">&quot;results/analysis_report.csv&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>ar_result <span class="ot">=</span> estParser<span class="sc">$</span><span class="fu">get_ar</span>(<span class="st">&quot;results/ar_results.csv&quot;</span>, analysis_report)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>aar_result <span class="ot">=</span> estParser<span class="sc">$</span><span class="fu">get_aar</span>(<span class="st">&quot;results/aar_results.csv&quot;</span>)</span></code></pre></div>
 <p>Now, you can use the downloaded CSV (or your preferred data format)
-files in your analysis. During the creation of the
-<code>arEventStudy</code> object we merge information from the request
-file, and the result files.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(arEventStudy<span class="sc">$</span>arResults))</span></code></pre></div>
+files in your analysis. While creating the <code>arEventStudy</code>
+object, we merge information from the request and result files.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(ar_result<span class="sc">$</span>ar_tbl))</span></code></pre></div>
 <p>The averaged abnormal return (aar) <code>data.frame</code> has the
 following shape:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(arEventStudy<span class="sc">$</span>aarResults))</span></code></pre></div>
-<p>You can find the statistic naming in
-<code>arEventStudy$aarStatistics</code>.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(aar_result<span class="sc">$</span>aar_tbl))</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(aar_result<span class="sc">$</span>statistics_tbl))</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>aar_result<span class="sc">$</span><span class="fu">plot_test_statistics</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>aar_result<span class="sc">$</span><span class="fu">plot</span>(<span class="at">ci_statistics =</span> <span class="st">&quot;Patell Z&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>aar_result<span class="sc">$</span><span class="fu">plot_cumulative</span>()</span></code></pre></div>
 </div>
 <div id="abnormal-volatility-event-study" class="section level2">
 <h2>Abnormal Volatility Event Study</h2>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">authentication</span>(<span class="at">apiKey =</span> key)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># get &amp; set parameters for abnormal return Event Study</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>esaParams <span class="ot">&lt;-</span> EventStudy<span class="sc">::</span>AVyCApplicationInput<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>esaParams<span class="sc">$</span><span class="fu">setResultFileType</span>(<span class="st">&quot;csv&quot;</span>)</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>avycEventStudy <span class="ot">&lt;-</span> est<span class="sc">$</span><span class="fu">performEventStudy</span>(<span class="at">estParams    =</span> esaParams, </span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">dataFiles     =</span> dataFiles,</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">downloadFiles =</span> T)</span></code></pre></div>
-<p>The prepared <code>data.frames</code> in <code>avycEventStudy</code>
-have a similar shape as for the abnormal return Event Study.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>event_study_api_key <span class="ot">=</span> <span class="fu">Sys.getenv</span>(<span class="st">&quot;event_study_api_key&quot;</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">authentication</span>(<span class="at">apiKey =</span> event_study_api_key)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co"># get &amp; set parameters for abnormal return Event Study</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>esaParams <span class="ot">&lt;-</span> EventStudy<span class="sc">::</span>AVyCApplicationInput<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>esaParams<span class="sc">$</span><span class="fu">setResultFileType</span>(<span class="st">&quot;csv&quot;</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">performEventStudy</span>(<span class="at">estParams     =</span> esaParams, </span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>                      <span class="at">dataFiles     =</span> dataFiles,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>                      <span class="at">downloadFiles =</span> T)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>estParser <span class="ot">&lt;-</span> ResultParser<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>analysis_report <span class="ot">=</span> estParser<span class="sc">$</span><span class="fu">get_analysis_report</span>(<span class="st">&quot;results/analysis_report.csv&quot;</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>ar_result <span class="ot">=</span> estParser<span class="sc">$</span><span class="fu">get_ar</span>(<span class="st">&quot;results/ar_results.csv&quot;</span>, analysis_report)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>aar_result <span class="ot">=</span> estParser<span class="sc">$</span><span class="fu">get_aar</span>(<span class="st">&quot;results/aar_results.csv&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>aar_result<span class="sc">$</span><span class="fu">plot_cumulative</span>()</span></code></pre></div>
+</div>
+<div id="abnormal-volatility-event-study-1" class="section level2">
+<h2>Abnormal Volatility Event Study</h2>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>event_study_api_key <span class="ot">=</span> <span class="fu">Sys.getenv</span>(<span class="st">&quot;event_study_api_key&quot;</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> EventStudyAPI<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">authentication</span>(<span class="at">apiKey =</span> event_study_api_key)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co"># get &amp; set parameters for abnormal return Event Study</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>esaParams <span class="ot">&lt;-</span> EventStudy<span class="sc">::</span>AVyCApplicationInput<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>esaParams<span class="sc">$</span><span class="fu">setResultFileType</span>(<span class="st">&quot;csv&quot;</span>)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>est<span class="sc">$</span><span class="fu">performEventStudy</span>(<span class="at">estParams     =</span> esaParams, </span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>                      <span class="at">dataFiles     =</span> dataFiles,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>                      <span class="at">downloadFiles =</span> T)</span></code></pre></div>
 </div>
 </div>
 

@@ -10,7 +10,7 @@ output:
     highlight: tango
     css: kable.css
 vignette: >
-  %\VignetteIndexEntry{EventStudy: Parameters}
+  %\VignetteIndexEntry{Event Study: Parameters}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -51,7 +51,7 @@ getOption("EventStudy.tryAttempts")
 
 # Performing an Event Study (ARC, AVC, or AVyC)
 
-After you have set your paramaeters, you can easily perform your Event Study:
+After you have set your parameters, you can easily perform your Event Study:
 
 ```{r, eval=FALSE}
 apiUrl <- "http://api.eventstudytools.com"
@@ -343,5 +343,5 @@ volatilityEstParams$setTestStatistics(c("aarptlz", "aarrankz"))
 
 # How to Cite
 
-Please cite our work in your [publication](https://www.eventstudytools.com/how-cite-eventstudytoolscom).
+Please cite our work in your [publication](https://eventstudytools.com/how-cite-eventstudytoolscom).
 
