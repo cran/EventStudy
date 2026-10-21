@@ -1,143 +1,788 @@
-## Notes
+# EventStudy 0.66.0
 
-- Fixing date issue: dates before 01.01.1970 are currently not working
+## CRAN resubmission
 
-## 0.39
+* DESCRIPTION text revised per CRAN review: single quotes only around
+  software names, all acronyms spelled out, and method references given as
+  author (year) with DOI/URL links.
 
-- Parsed outputs are now data classes
-- Re-align to CRAN 
-- Adapt to changes of EventStudy API
-- More code documentation.
+## Statistical correctness fixes (2026-09-24 re-evaluation)
+
+The 2026-09-24 package re-evaluation found twelve silent-wrong-statistic
+defects across return models, multi-event test statistics, bootstrap
+inference, and cross-sectional regression. Every fix ships with a
+failing-first regression test in `tests/testthat/test_reeval_statistical_fixes.R`
+and, where the fix redefines a valid-input result, a re-pinned golden value in
+`tests/testthat/test_golden_values.R`. See `vignettes/statistical-conventions.Rmd`
+for the full audit log and citations.
+
+* **A1 -- RollingWindowModel now restricts each rolling window to COMPLETE
+  PAIRS** (both firm and index finite) before computing `x_bar`/`ss_xx`/
+  residuals/sigma. Previously, rows where the firm return was NA but the
+  index was not still contributed to `x_bar`/`ss_xx`, biasing beta whenever
+  NA-firm rows co-occur with index outliers. `fit()` and
+  `calculate_statistics()` now share the same complete-pair count for df/FEC.
+* **A2 -- A fully-degenerate event (zero finite event-window abnormal
+  returns) is now EXCLUDED from every CAR-based multi-event statistic**
+  (`CSectTTest`, `PatellZTest`, `SignTest`, `GeneralizedSignTest`, `BMPTest`,
+  `KolariPynnonenTest`), applied once per group (at most one warning per
+  group, not one per configured statistic). Previously it was coalesced to 0
+  and silently understated cross-event dispersion. The pre-existing STATS-03
+  convention (a partial gap contributes 0 to that event's own CAR) is
+  unchanged.
+* **A3 -- KolariPynnonenTest never falls back to an adjustment factor of 1.**
+  A degenerate (constant or too-short) estimation-window SAR series is now
+  excluded from the `r_bar` cross-sectional correlation estimate (reported
+  once); if fewer than 2 usable events remain, `kp_t`/`ckp_t` are `NA` instead
+  of silently reporting the unadjusted BMP value. The per-day KP adjustment
+  now uses THAT DAY's `n_valid_events` instead of the first day's count
+  applied uniformly to every day.
+* **A4 -- RankTest and GeneralizedSignTest now group by `event_id`, not
+  `firm_symbol`,** for ranking/centering and `p_hat` estimation. Previously a
+  firm recurring across multiple events had its data silently pooled across
+  those events.
+* **A5 -- `cross_sectional_regression()` sample-integrity hardening.**
+  Duplicated `event_id`s in the `data` argument now error; a `car_window`
+  extending outside any event's available event window now errors; task
+  events with no matching `data` row are dropped with one warning; an event
+  whose CAR is `NA` because an abnormal return inside `car_window` is missing
+  is excluded with one warning (`.extract_cars()` no longer sums with
+  `na.rm = TRUE`, so ANY missing AR in the window makes the whole CAR `NA`;
+  `car_by_group()`/`car_quantiles()`/`plot_car_distribution()` inherit this
+  NA-CAR semantics without an additional warning).
+* **A6 -- OLS insufficient-observations guard is now `n_params`-based, not a
+  flat threshold,** for `MarketModel` and every `LinearFactorModel` subclass
+  (FF3, FF5, Carhart4); a model that fits with fewer than 30 valid estimation
+  observations (the same recommended minimum as `validate_task()`'s default)
+  now emits one advisory warning in both modes. `PatellZTest`'s `k` is now
+  read explicitly from each model's `statistics$n_params` (MarketModel 2,
+  FF3 4, Carhart4 5, FF5 6, CPMA 1, MarketAdjusted 0) instead of being derived
+  as `length(resid) - df` (which was silently wrong whenever `df` reflected
+  an unrelated correction); `m` now counts finite estimation-window abnormal
+  returns instead of the raw row count. `MarketModel`'s forecast-error
+  correction now uses complete pairs only for `mean(Rm_est)`/`SS_market`,
+  matching exactly the rows `lm()` used.
+* **A7 -- `CalendarTimePortfolioTest` denominator redefined to the
+  Brown-Warner (1980, 1985) estimation-window AAR standard deviation.**
+  Previously `ts_sd` was computed from the event-window portfolio series
+  itself (self-referential with the numerator, so a larger event-day shock
+  inflated both). `caltime_t`/`ccaltime_t` now use degrees of freedom
+  `n_estimation_days - 1`, exposed as `attr(result, "caltime_df")` and read by
+  both `adjust_p_values()` and `tidy()`. **This is a valid-input redefinition:**
+  `caltime_t`/`ccaltime_t` values differ from the initial 0.66.0 submission; golden values are
+  re-pinned.
+* **A8 -- `MarketAdjustedModel`'s forecast-error correction is now
+  `forecast_error_corrected_sigma == sigma` exactly** (correction factor 1),
+  because the model estimates nothing from the estimation window. Previously
+  it wrongly reused the constant-MEAN correction formula
+  (`sigma * sqrt(1 + 1/m)`), which is only valid for a model that DOES
+  estimate one parameter (a mean), like `ComparisonPeriodMeanAdjustedModel`
+  (unchanged). **This is a valid-input redefinition;** golden values are
+  re-pinned.
+* **A9 -- Sign convention unified to strict `n_pos = sum(AR > 0)` /
+  `n_neg = sum(AR <= 0)`** in `CSectTTest`, `PatellZTest`, and
+  `CalendarTimePortfolioTest` (previously `>= 0`/`< 0`), matching the
+  pre-existing `SignTest` convention. An abnormal return of exactly 0 now
+  counts as non-positive everywhere.
+* **A10 -- `TestStatisticBase$confidence_type` is now validated** with
+  `match.arg(c("two-sided", "less", "greater"))` (an invalid value errors) and
+  emits one warning at construction when a non-default value is supplied,
+  stating that every p-value in EventStudy is currently two-sided and the
+  value has no effect. No p-value formula changed; one-sided p-values are not
+  implemented.
+* **A11 -- `BMPTest` roxygen documentation corrected (docs-only, no formula
+  change).** The docstring incorrectly claimed standardization by the
+  forecast-error-corrected sigma; both `BMPTest` and `KolariPynnonenTest`
+  standardize by the MODEL sigma (`model$statistics$sigma`), which is what the
+  code always computed.
+* **A12 -- `bootstrap_test()` observed/draw construction aligned; NA draws
+  excluded from the p-value denominator.** `observed_caar` now uses the SAME
+  per-event `coalesce`-to-0 CAR construction as the bootstrap draws (matches
+  `cumsum(observed_aar)` exactly on NA-free input, but differs from it under a
+  partial-window gap, where the per-event construction is correct). A
+  bootstrap draw whose statistic is `NA` (e.g. a sign-flip combination that
+  zeroes the cross-sectional SD) is now excluded from BOTH the exceedance
+  count and the denominator, instead of being counted as "did not exceed"
+  while still inflating `n_boot + 1`. The bootstrap weight clustering unit
+  (`firm_symbol`) is confirmed correct and unchanged.
+
+## API and documentation consistency (2026-09-24 re-evaluation)
+
+* **B1 -- `ModelBase`, `TestStatisticBase`, and `ReturnCalculation` are now
+  exported** with roxygen documenting the subclass contract expected by
+  `run_event_study()` (`fit()`/`abnormal_returns()`, `compute()`,
+  `calculate_return()`, and the `statistics` fields consumed downstream,
+  including the optional `n_params` field added by A6). Previously these
+  base classes existed but were unexported, so vignettes and skills
+  advertising "subclass `ModelBase`" referenced a symbol users could not
+  actually reach with `EventStudy::ModelBase`.
+* **B5 -- `generics::tidy(task)` now dispatches to `tidy.EventStudyTask()`.**
+  `generics` added to Suggests; `tidy.EventStudyTask()` remains directly
+  callable and exported as before.
+* **B2 -- Vignette code examples fixed to the real function signatures.**
+  `modern-did-estimators.Rmd` and `automated-reports.Rmd` previously called
+  `PanelEventStudyTask$new()` with non-existent arguments
+  (`data`/`unit_col`/`time_col`/`treatment_col`/`outcome_col`); fixed to the
+  real `(panel_data, unit_id, time_id, outcome, treatment, treatment_time)`.
+  `cross_sectional_regression(characteristics = ...)` fixed to
+  `data = ...`. `automated-reports.Rmd`'s "Available sections" table and
+  every `sections = c(...)` example previously listed section keys
+  (`summary`, `data`, `single_event`, `multi_event`, `cross_sectional`,
+  `panel`) that do not exist in the report template; corrected to the real
+  keys (`exec_summary`, `data_methods`, `results`, `diagnostics`,
+  `robustness`, `references`, `appendix`).
+* **B4 -- pkgdown reference reorganized.** `statistical-conventions` added
+  as an article; `dieselgate`/`earnings_surprises` now listed explicitly in
+  "Data & Datasets"; `degenerate-input-contract`, `eventstudy-shape-contracts`,
+  and `eventstudy-deprecation` grouped under a new "Contracts & Lifecycle"
+  reference section; `report_table` added to "Export & Reporting" and its
+  `\keyword{internal}` tag removed (it is exported and advertised).
+* **B6 -- Unused `DT` and `patchwork` removed from Suggests.**
+  `download_stock_data()`'s quantmod fallback branch now guards
+  `zoo::index()` with its own `requireNamespace("zoo")` check before any
+  download.
+* **B7 -- `.claude/skills/es-capabilities/SKILL.md` signatures corrected**
+  for `run_event_study()` and `validate_task()` to match `formals()`; a
+  scripted scan of every vignette/README/skill code chunk confirms zero
+  remaining argument-name drift against the installed package.
+* **B3 -- `.claude/skills/es-advisor/reference/interpreting-diagnostics.md`
+  rewritten to the real `es_diagnostics()` structure** (`meta`,
+  `estimation_window`, `event_window`, `cross_sectional`, `contract_state`,
+  `aggregate_summary`), verified field-by-field against a live run, with the
+  8 offline knowledge-base rule thresholds restated in terms of the real
+  field paths they key off. The previous version documented a fabricated
+  structure (`n_events`, `per_event`, `mean_r_squared`, etc.) that did not
+  exist on the returned object.
+
+## Testing (2026-09-24 re-evaluation)
+
+Test-suite quality hardening so vacuous or always-skip tests no longer mask
+regressions, and so the full `NOT_CRAN=true` suite runs with `WARN 0`
+(every warning a test triggers is now explicitly expected by class/regexp,
+or muffled at its source when the fixture is intentionally short).
+
+* **C1 -- `adjust_p_values()`** gains explicit-formula tests for its
+  KolariPynnonenTest, GeneralizedSignTest, RankTest and
+  CalendarTimePortfolioTest branches, comparing against
+  `2*pt(-abs(t), df)`/`2*pnorm(-abs(z))` directly.
+* **C2 -- Vacuous regression tests made real:** the bootstrap firm-clustering
+  test now hand-replicates the wild-bootstrap algorithm (one weight per
+  unique `firm_symbol`) and shows it differs from an event-level clustering
+  alternative on the same seed; the two Patell `Q_i` tests now assert the
+  exact `aar_z` from an independent hand computation (`k=2` and `k=4`); the
+  `LinearFactorModel` FEC test now asserts the exact hat-matrix value
+  `sigma*sqrt(1+h_t)`; the HAC-SE test now asserts equality with
+  `sandwich::NeweyWest()` on the same `lm()` fit.
+* **C3 -- Panel TWFE tests tightened to golden checks** against a direct
+  `lm()` two-way-fixed-effects fit on the same deterministic seeded fixture
+  (`static_twfe` estimate + cluster-robust SE; `dynamic_twfe` every
+  non-base event-time coefficient), replacing the previous loose numeric
+  bounds.
+* **C4 -- `.rank_events_for_cap()` real test:** an event genuinely unfitted
+  via a degenerate estimation window (with its one contract warning
+  asserted explicitly) is shown to always rank first (anomaly score `Inf`)
+  and always survive a `max_events` cap, replacing the previous
+  unconditional `skip()`.
+* **C5 -- DCC-GARCH / MarketModel FEC tests de-guarded:** the DCC-GARCH test
+  no longer swallows errors in a `tryCatch()`-to-`TRUE` handler; it now
+  asserts `is_fitted` unconditionally and skips ONLY on a narrowly-matched
+  non-convergence warning. The `MarketModel` FEC "effective obs count" test
+  no longer hides its assertions behind `if (is_fitted)`.
+* **C6 -- `.try_download()` narrowed** to convert only network/HTTP-style
+  failures into `skip()` (by condition class when available, otherwise a
+  narrow message pattern); any other error (a parse/logic bug) now fails
+  the test. Covered by two new direct tests of the helper itself.
+* **C7 -- Every `test_that()` block that draws random numbers without its
+  own seed now has one**, across `test_edge_cases.R`, `test_models.R`,
+  `test_multi_event_statistics.R`, `test_cross_sectional.R`,
+  `test_synthetic_control.R` and `test_intraday.R`; `test_intraday.R`'s
+  `Sys.time()`-based fixtures were replaced with fixed UTC `POSIXct`
+  literals.
+* **C8 -- High-value numeric assertions added** to `test_execute.R` (each
+  exercised model's `AR`/`alpha`/`beta` checked against a direct `lm()` or
+  arithmetic computation) and `test_export.R` (exported CSV `AR`/`CAR`/`AAR`
+  values checked to equal the task's own values, round-tripped through the
+  file).
+* **C9 -- Test-file organization:** the full-pipeline
+  `CalendarTimePortfolioTest` case moved from `test_bhar_test_statistics.R`
+  to `test_multi_event_statistics.R` (it is not a BHAR test); the
+  `browser()`-source-grep check in `test_aar_test_statistics.R` replaced
+  with a behavioural `PatellZTest$compute()` test against a hand
+  computation; the single weak test in `test_caar_test_statistics.R` folded
+  into a real numeric `CSectTTest` check.
+* **C10 -- No leaked warnings.** Every warning a test triggers is now either
+  asserted explicitly (`expect_warning(..., regexp =` / nested for multiple
+  independent warnings) or muffled by class via the new
+  `muffle_short_window()` helper (`tests/testthat/helper-warnings.R`) for
+  fixtures whose short estimation window is intentional (golden/invariant/
+  numerical-stability fixtures, never a blanket `suppressWarnings()`). A new
+  `test_execute.R` test locks that `fit_model()` collapses N short-window
+  events into exactly ONE `eventstudy_short_estimation_window` warning
+  listing the event ids.
+
+## API Stabilization & Deprecation Lifecycle (Phase 28)
+
+This release completes a signature-consistency audit of the full public API and
+wires a formal deprecation lifecycle (base `.Deprecated()` + optional
+`lifecycle` shim). All deprecated argument names continue to work and emit
+exactly one deprecation warning pointing to the replacement.
+
+### Renamed Arguments (deprecated old names still work)
+
+* `plot_stocks()`: `do_sample` is deprecated in favour of `sample_symbols`
+  (#APIS-01). The new name is noun-first, consistent with the sibling parameter
+  `max_symbols`. Pass the old name and you receive one deprecation warning; the
+  result is identical. (#APIS-04)
+
+### Deprecation Infrastructure
+
+* New internal helper `.deprecate_arg()` in `R/deprecation.R`. Always calls
+  base `.Deprecated()` unconditionally; additionally calls
+  `lifecycle::deprecate_warn()` when `lifecycle` is installed (Suggests-only,
+  never a hard dependency). (#APIS-04)
+
+### Return-Shape Contracts (opt-in, default-off)
+
+* New `R/shape_contracts.R` provides an opt-in return-shape contract for the
+  pipeline's result tibbles. Enable with
+  `options(EventStudy.shape_contracts = TRUE)`. When enabled, the pipeline
+  checks that the column names and types of the single-event statistics tibbles
+  (`ART`, `CART`) and the multi-event AAR/CAAR tibble (`CSectT`) match the
+  canonical expected shapes. On any mismatch exactly one `warning()` is
+  emitted naming the context and the specific drift; the contract never calls
+  `stop()`. Correctly-shaped `is_fitted = FALSE` degenerate outputs (same
+  column names, `NA`-propagated values) are treated as valid shapes and produce
+  no warning. The option defaults to `FALSE` so valid-input behaviour and the
+  existing test suite are completely unaffected. (#APIS-02)
+
+## Install-Tested Multi-OS CI (Phase 29)
+
+* The GitHub Actions workflow now runs `rcmdcheck` against the *installed*
+  package (not `load_all`) across multiple operating systems, catching
+  install-vs-`load_all` divergence in NAMESPACE/imports before it reaches CRAN.
+* A dedicated CI leg runs with `_R_CHECK_FORCE_SUGGESTS_` forced on, exercising
+  every optional-Suggests code path so the `requireNamespace()` guards are
+  verified end-to-end.
+* `report_table()` is now an exported function; the public API snapshot accepts
+  it.
+* Vignette and example audits confirm no default network access and no writes
+  outside `tempdir()`.
+
+## CRAN Resubmission Preparation (Phase 30)
+
+* DESCRIPTION version bumped to 0.66.0 in preparation for CRAN resubmission
+  (the package was archived on 2024-04-20; v0.66.0 is a complete ground-up
+  rewrite).
+* CRAN example-policy compliance: the six data-dependent / slow-but-safe
+  examples (`es_report`, `generate_report`, `run_event_study`, `recommend_stat`,
+  `flag_robustness`, `nonparametric_intraday_test`) were converted from
+  `\dontrun{}` to `\donttest{}` and made self-contained (bundled `dieselgate`
+  data, `tempdir()`-only output). Only the genuine network + credentials
+  provider examples remain `\dontrun{}`.
+* `R CMD check --as-cran` on the built source tarball is clean (0 errors,
+  0 warnings; the only NOTE is the expected archived-package incoming-feasibility
+  acknowledgement), and win-builder R-devel / R-release checks were dispatched.
+
+# EventStudy 0.65.0
+
+The "Polish" milestone lifts the *felt* quality of the package — brand identity,
+plot and report aesthetics, API and message ergonomics, and documentation — with
+no change to statistical results. Behavior on valid inputs is unchanged; this
+release is purely additive.
+
+## Brand & Identity
+
+* New EventStudy logo (CAR-curve motif) at `man/figures/logo.png` and hex sticker
+  at `man/figures/logo-hex.png` (#BRAND-01).
+* Logo wired into README badge row and pkgdown navbar (#BRAND-02).
+* Full favicon set generated for the pkgdown site (#BRAND-03).
+* Open Graph social-preview card configured for shared link thumbnails (#BRAND-04).
+* pkgdown site palette and typography aligned to the eventstudy.de ecosystem brand
+  via `template.bslib` and `pkgdown/extra.scss`, with a restyled home card gallery
+  and numeric-badge strip (#BRAND-05, #BRAND-06).
+* Lifecycle badge updated from `experimental` to `stable` (#BRAND-07).
+
+## Plot Aesthetics
+
+* **New `theme_eventstudy()`** ggplot2 theme and **`es_colours`** palette
+  (exported from `R/theme.R`). The palette is the colorblind-safe Okabe-Ito set
+  aligned to the ecosystem brand (#VIZ-01, #VIZ-02).
+* Built-in ggplot2 and plotly visuals (`plot_event_study()`, `plot_diagnostics()`,
+  and the single/multi-event helpers) now draw from `es_colours` instead of
+  hardcoded colours, for a consistent, accessible look across the package (#VIZ-03).
+
+## Report Aesthetics
+
+* `es_report()` tables now render via **`tinytable`** when available, with a
+  byte-compatible `knitr::kable()` fallback when it is not — styled consistently
+  across the HTML, PDF, Word, and Markdown formats (#VIZ-04, #CRAN-05).
+* Every report plot chunk carries a figure caption, and figure sizing is now
+  per-format (via `ragg`) instead of a single global width (#VIZ-05, #VIZ-06).
+* HTML reports pick up a brand-tokened `report.css`, injected only on the HTML
+  output path; PDF/Word/Markdown output is unaffected (#VIZ-07).
+
+## API & Message Polish
+
+* `print.*` methods now return `invisible(x)` for clean piping, and `format.*`
+  methods were added where missing (#API-01, #API-02).
+* Selected `stop()`/`warning()` calls are now classed `eventstudy_*` conditions
+  (via `rlang::abort()`/`rlang::warn()`) whose messages name the offending
+  argument and value, so failures are catchable by class and easier to diagnose
+  (#API-03, #API-04).
+* A `verbose=` quiet mode was added; the default is byte-identical to prior
+  behavior (#API-05). Deprecation audit completed with no new dependency (#API-06).
+
+## Docs & Site
+
+* Extensive `@family` and `@seealso` cross-links across the exported API, grouping
+  functions into cohesive clusters for easier navigation (#DOCS-01).
+* README gains an **Ecosystem** section (Google Sheets add-on / R package /
+  WebAssembly app) and honest capability counts (15+ return models, 12 test
+  statistics) reconciled across README, gallery, and vignettes (#DOCS-02).
+* `pkgdown::check_pkgdown()` wired into CI so reference-index drift is caught
+  automatically (#DOCS-03).
+* Getting-started vignette tightened with a one-call Quick Start and cross-links
+  to the other articles (#DOCS-04).
+
+## CRAN Hygiene
+
+* Version bumped to 0.65.0 (#CRAN-02).
+* CI tarball-size assertion (< 1 MB) and non-ASCII grep guard added (#CRAN-03, #CRAN-04).
+* Only optional Suggests (`tinytable`, `patchwork`, `ragg`) were added, all guarded
+  by `requireNamespace()`; no new hard dependencies and no new `R CMD check`
+  findings versus the prior baseline (#CRAN-01).
+
+# EventStudy 0.64.0
+
+## One-Call Reporting: es_report() and run_event_study(report = TRUE)
+
+* **New `es_report()` orchestrator.** A single function call converts a fitted
+  `EventStudyTask` into a complete, publication-ready report. The function
+  deep-clones the task (non-mutation guarantee), runs `es_diagnostics()` to
+  harvest diagnostic metadata, assembles a grounded narrative via
+  `generate_report()` (assembled once before any format loop), and renders
+  output to one or more formats. Returns a named character vector of output
+  path(s) visibly, so the path prints at the REPL without an explicit
+  `print()`.
+
+* **Multi-format output.** `es_report()` accepts `format = c("html", "pdf",
+  "word", "md")` and renders one file per format sharing a common basename.
+  All formats are fully offline by default (no API key, no network required);
+  an optional `provider` argument enables LLM-grounded narrative when
+  available.
+
+* **Additive `run_event_study(report = FALSE, report_args = list())`
+  convenience.** The pipeline entry-point gains two new optional arguments.
+  When `report = FALSE` (the default), behaviour is byte-identical to the
+  previous release -- no allocation overhead, no side effects. When
+  `report = TRUE`, `es_report()` is called after the pipeline completes and
+  the rendered path(s) are attached as `attr(task, "report_path")`.
+
+# EventStudy 0.62.0
+
+## Documentation site + CI/CD deploy
+
+* A curated pkgdown documentation site is now published at
+  <https://sipemu.github.io/eventstudy/>, built and deployed to GitHub Pages
+  by CI (r-lib pkgdown workflow) on every push to main and on releases.
+* `DESCRIPTION` `URL` and `README` now link to the live docs site.
+* `.Rbuildignore` excludes `_pkgdown.yml`, `docs/`, and `pkgdown/` so the
+  site scaffolding is kept out of the CRAN source tarball; no source or
+  behaviour change.
+
+# EventStudy 0.61.3
+
+## Robustness: graceful degradation when a data source is unreachable
+
+* **`download_stock_data()` now fails clearly when the source returns no data.**
+  When `tidyquant::tq_get()` cannot reach the source (network outage, rate limit)
+  or the ticker is invalid, it returns a bare logical instead of a data frame.
+  Previously this surfaced as a cryptic `no applicable method for 'transmute'`
+  error; the function now detects the empty result and stops with an actionable
+  message naming the symbols and source. No behavior change on valid downloads.
+
+* **Network download tests skip gracefully on source outages.** The Yahoo Finance
+  and Ken French library tests are wrapped so a transient source outage skips the
+  test instead of failing CI (`skip_if_offline()` only checks generic
+  connectivity, not the specific source). Fixes intermittent red CI on the
+  R-devel job when Yahoo was unreachable.
+
+* **Fixed the single-event AR/CAR confidence bands in `plot_event_study()`.** Both
+  bands were centered on zero (`+/- z*sigma` for AR, `+/- z*sqrt(k)*sigma` for CAR)
+  instead of on the estimate, so an abnormal return or CAR that drifts away from
+  zero (e.g. VW's -17% AR / -35% CAR in the advisor vignette) ran far outside its
+  own "confidence band". The ribbons are now `AR +/- z*sigma` and
+  `CAR +/- z*sqrt(k)*sigma`, correctly enveloping the plotted path.
 
 
-## 0.38
+# EventStudy 0.61.2
 
-- Remove strong package dependencies
-- Change licence to MIT
+## Multi-automaker dieselgate dataset + CI bands + group CAAR plot + mock advisor
 
-### Bugfixes
+* **Extended `dieselgate` dataset** — the bundled dataset now covers **four German
+  automakers** (VOW.DE, PAH3.DE, BMW.DE, MBG.DE) plus the DAX benchmark across
+  the 2015 Dieselgate emissions scandal, with a two-group request structure:
+  "VW Group" (directly implicated firms) vs "Other" (peer automakers). This
+  enables multi-group event studies and CAAR comparisons out of the box. The
+  four-row `request` tibble carries the group column; `event_id = 1` remains
+  VOW.DE for backward compatibility. See `?dieselgate`.
 
-- CAAR result parsing
-- aarPlot & arPlot: more user-friendly error messages
+* **CI bands on CAR/CAAR plots** — `plot_event_study(type = "car", event_id = 1L,
+  confidence_level = 0.95)` draws a 95% confidence ribbon around the cumulative
+  abnormal return path; the group CAAR comparison plot in the advisor vignette
+  overlays per-group CI ribbons, making the statistical certainty of the VW Group
+  crash visually immediate.
 
+* **Multi-group CAAR comparison** — the advisor vignette now shows a side-by-side
+  ggplot2 CAAR path for "VW Group" (CAAR at +10 ≈ -39%, t ≈ -12.6) and "Other"
+  (CAAR at +10 ≈ +1%, t ≈ 0.34, not significant), illustrating the idiosyncratic
+  nature of the shock: VW Group craters while peer automakers barely move.
 
-## 0.36.900
+* **Mock AI-advisor interpretation block** — the advisor vignette's static
+  LLM-output example is updated to reflect the multi-group results, grounded in
+  the actual computed diagnostics (beta ~1.09, R-squared ~0.74, Shapiro-Wilk
+  p ~0.004, VW Group CAAR t-statistic ~-12.6, near-zero Other CAAR). The block
+  is clearly labelled as a captured/illustrative example, not evaluated at build
+  time.
 
-### Bugfixes
+# EventStudy 0.61.1
 
-- CAAR result parsing
-- aarPlot & arPlot: more user-friendly error messages
+## Correctness fix + advisor vignette plots
 
+* **Return calculation could silently return all zeros/NA when `dplyr` was not
+  attached.** `SimpleReturn` / `LogReturn` called a bare `lag()`, but
+  `dplyr::lag` was not imported into the package namespace, so `lag` resolved to
+  `stats::lag`, which no-ops on a plain numeric vector. Every return then
+  computed as `0` (and row 1 as `0` instead of `NA`); the resulting
+  zero-variance series tripped the market-model variance guard, so **all**
+  abnormal returns and CARs came back `NA`. This only manifested when `dplyr`
+  was not on the search path (e.g. a plain `library(EventStudy)` session or the
+  advisor vignette build); the test suite and audit ran with `dplyr` attached,
+  masking `stats::lag`, and never observed it. `dplyr::lag` is now imported, so
+  returns are correct for everyone. Behavior is unchanged for callers who
+  already had `dplyr` attached. A regression test locks the namespace
+  resolution so `lag` can never silently fall back to `stats::lag` again.
+* **Advisor vignette (`ai-advisor.Rmd`) gains AR and CAR plots** — the abnormal
+  return across the `[-10, +10]` event window and the cumulative abnormal
+  return path, both rendered offline, making the dieselgate crash visible.
 
-## 0.36
+# EventStudy 0.61.0
 
-- Result files
-  - Downloaded files have meaningful names, e.g. ar_results.csv
-  - Download will be performed quietly
-  - Result folder will be created if it not exists
+## Advisor Vignette + Bundled Dieselgate Dataset
 
-- API key can be set as a global option
-- Minor updates in Parameters Vignette
+This release makes the AI advisor's story legible through a real-world worked
+example, with no change to existing package behavior or APIs.
 
+* **`dieselgate` dataset** — a small, frozen dataset bundling daily adjusted
+  prices for Volkswagen AG (`VOW.DE`) and the DAX benchmark index (`^GDAXI`)
+  around the 2015-09-18 EPA emissions-scandal disclosure. Loadable via
+  `data(dieselgate)` with no network access; it drives a complete event study
+  end-to-end and recovers the roughly -35% cumulative abnormal return crash.
+  See `?dieselgate` for the documented schema and provenance, and
+  `data-raw/dieselgate.R` for the reproducible fetch script.
 
-## 0.35
-
-- Added some more message to output during the process
-
-### Bugfixes
-
-- result files loading is fixed
-- result file parser is fixed
-- fixed task checks
-- input file checker is fixed
-
-- examples
-    - Github example was not working
-
-## 0.34
-
-### Bugfixes
-
-- EventStudyAddin
-    - setTestStatistics did not worked proberly
-    - added all types of event studies
-    - ResultPraser object is now returned to the console
-
-
-## Version 0.33
-
-- add Excel export functionality to ResultParser
-- add new file ckecks
-    - check event window is in firm and market data
-    - check estimation window is in firm and market data
-    - dates before 01.01.1970 are actually not allowed
-- add function estAPIKey for setting EventStudy API key
-- ResultParser now parses CAR values
-
-### Bugfixes
-
-- fix EventStudy Addin 
-    - tradding days options
-    - statistics options
-    - result object is now returned to console
-
-
-## Version 0.32
-
-- redesign vignettes
-
-### Bugfixes 
-
-- file parser bugfix
-- aarPlot bugfix CI interval
-- spelling fixes
+* **"The Grounded AI Advisor" vignette** (`vignettes/ai-advisor.Rmd`) — explains
+  *why* the advisor exists (the grounding invariant: it never fabricates a
+  number) and *how* it works (the two-layer architecture: a deterministic
+  offline grounding layer plus an optional LLM interpretation layer policed by a
+  runtime guard). It walks through the `dieselgate` example, running the
+  pipeline and the deterministic advisor layer (`es_diagnostics()`,
+  `recommend_stat()`, `flag_robustness()`) **live with no API key**, and shows
+  the `es_advise()` LLM layer as a clearly-labelled captured static block. The
+  vignette builds fully offline.
 
 
-## Version 0.31
+# EventStudy 0.60.0
 
-- add vignette
-    - Event Study RStudio Addin
-    - Howto: Dieselgate as an Example
-- Check data files in prior of file upload
+## Grounded AI Advisor — Feature Set (Phases 5–8)
 
+This release ships a complete AI-advisor layer for event study analysis, built
+on a deterministic offline knowledge base and an optional LLM backend.  All
+advisor features respect CRAN's no-phone-home policy: network calls are
+opt-in and fully guarded.
 
-### Bugfixes
+### Offline Diagnostics + Grounding Knowledge Base (Phase 5)
 
-- ResultParser was not correctly called in EventStudyAPI
-- ResultParser was not able to download files from url
-- getTaskStatus did not work properly in EventStudyAPI 
-- fix av and avyc parsing
+* **`es_diagnostics()`** — offline pre-flight diagnostic suite that inspects
+  estimation-window length, event-window span, event clustering, model
+  residual autocorrelation, and return normality, returning a structured
+  `Diagnostics` object consumable by the advice layer.
 
+* **`es_kb`** — a curated deterministic knowledge base (`R/advisor_kb.R`)
+  mapping diagnostic flags to actionable methodology recommendations, sourced
+  from MacKinlay (1997), Boehmer et al. (1991), Patell (1976), and related
+  academic literature.  `recommend_stat()` and `flag_robustness()` query the
+  KB without any network call.
 
-## Version 0.30
+### LLM-Agnostic Provider Abstraction (Phase 6)
 
-- add examples
-- minor bugfixing
+* **`provider()`** — constructs a provider configuration for the LLM backend
+  of `es_advise()`.  Supports Anthropic (`provider("anthropic")`),
+  OpenAI-compatible endpoints (`provider("openai_compatible", base_url = ...)`),
+  and custom call-back providers.  Uses `httr2` + `jsonlite` (both in
+  `Suggests`) guarded by `requireNamespace()` — never loads unless the user
+  explicitly calls `es_advise()` with a provider.
 
+### Grounded `es_advise()` + Runtime Grounding Guard (Phase 7)
 
-## Version 0.20
+* **`es_advise()`** — LLM-backed advice function that assembles grounding
+  context from `es_diagnostics()` output and the KB, sends a grounded prompt
+  to the configured provider, and returns a structured `Advice` object.  A
+  runtime grounding guard validates that the LLM response cites at least one
+  KB rule; ungrounded responses are downgraded to `"speculative"` confidence
+  and a warning is emitted — the package never silently returns LLM hallucinations
+  as authoritative advice.
 
-- refactoring class hierarchy
-- adding RStudio addins for performing a Return Event Study
-- Vignettes
-    - Introduction
-    - Parameters
-- add abnormal volume Event Study R6 class
-- add abnormal volatility Event Study R6 class
+* **`generate_report(advice = )`** — the report pipeline now accepts an
+  optional `Advice` object; when supplied, a dedicated "AI Advisor" section
+  is rendered in the output report with evidence chains and confidence labels.
 
+### Claude Code Agent Skill (Phase 8)
 
-## Version 0.11
+* **`.claude/skills/es-advisor/SKILL.md`** — a Claude Code Agent Skill that
+  surfaces `es_diagnostics()` + `es_advise()` to Claude Code users directly
+  from their AI assistant.  The skill file is excluded from the CRAN tarball
+  via `.Rbuildignore`.
 
-- automatic ARC parameter setup
-- ggplot and highchart graphics:
-    - abnormal returns
-    - averaged abnormal returns
-    - pointwise cumulative abnormal returns
+### Advisor Pro Waitlist (BIZ-01)
 
+* **Advisor Pro** is a planned retrieval-augmented premium tier backed by a
+  curated academic knowledge base.  It is not yet available.  To join the
+  waitlist, visit:
+  <https://github.com/sipemu/eventstudy#advisor-pro-waitlist>
 
-## Version 0.10
+  An optional opt-in footer can be enabled for `Advice` print methods:
+  ```r
+  options(eventstudy.advisor_pro_footer = TRUE)
+  ```
+  The footer is silent by default and opens no network connections.  See
+  `?advisor_pro` for details.
 
-Initial version of Event Study Tools API
+# EventStudy 0.50.0
 
-- perform an Event Study from R through the eventstudytools.com API
-- abnormal return and averaged abnormal return result parser and highchart plots
+## Robustness Hardening — Regression Catalog
+
+This release hardens the package against degenerate, boundary, and adversarial
+inputs (Phase 1–3). Every fix below is locked by a named test that will catch
+a regression. The cross-component degenerate-input regression net is provided
+by `tests/testthat/test_contract_matrix.R` (TEST-02, see final entry).
+
+### Contract Foundation (Phase 1 — CONTRACT-01..05)
+
+* **CONTRACT-01/02: Degenerate-input contract defined in `R/contract.R`**
+  (`.handle_degenerate()`, `.resolve_degenerate_mode()`; ParameterSet
+  `degenerate_handling` field; package option `EventStudy.degenerate_handling`).
+  — Locked by `tests/testthat/test_contract.R` ::
+  `test_that("CONTRACT-02: ParameterSet default resolves to lenient")` and
+  `test_that("CONTRACT-02: ParameterSet strict field resolves to strict")`.
+
+* **CONTRACT-03: Strict mode raises descriptive `stop()` naming event_id,
+  firm_symbol, and component on degenerate input (MarketModel).** —
+  Locked by `tests/testthat/test_contract.R` ::
+  `test_that("CONTRACT-03: strict mode errors on insufficient obs — names event_id, firm_symbol, MarketModel")`.
+
+* **CONTRACT-04: Lenient mode sets `is_fitted = FALSE`, emits exactly one
+  warning per `(event_id, firm_symbol)`, propagates NA through abnormal_returns,
+  and the pipeline emits exactly one warning per degenerate event.** —
+  Locked by `tests/testthat/test_contract.R` ::
+  `test_that("CONTRACT-04: lenient mode on insufficient obs sets is_fitted FALSE + exactly 1 warning")`
+  and `test_that("CONTRACT-04 (pipeline): run_event_study emits exactly ONE warning per degenerate (event_id, firm_symbol)")`.
+
+* **CONTRACT-05: Valid-input MarketModel statistics are byte-stable (baseline
+  fixture).** —
+  Locked by `tests/testthat/test_contract.R` ::
+  `test_that("CONTRACT-05: valid-input MarketModel statistics match committed baseline within 1e-8")`.
+
+### Model Migrations (Phase 1–2 — per-model contract enforcement)
+
+* **MarketModel migrated onto `.handle_degenerate()`** (insufficient obs /
+  zero-variance index guards). —
+  Locked by `tests/testthat/test_contract.R` ::
+  `test_that("CONTRACT-03: strict mode errors on insufficient obs — names event_id, firm_symbol, MarketModel")`.
+
+* **MarketAdjustedModel, ComparisonPeriodMeanAdjustedModel, CustomModel,
+  BHARModel, VolumeModel, VolatilityModel migrated** (each has insufficient-obs
+  and/or zero-variance guard). —
+  Locked by `tests/testthat/test_models.R` ::
+  `test_that("VolatilityModel: insufficient obs raises contract error in strict mode")`
+  and `test_that("CustomModel: degenerate input — abnormal_returns returns NA without calling predict(NULL)")`.
+
+* **LinearFactorModel, FamaFrench3FactorModel, FamaFrench5FactorModel,
+  Carhart4FactorModel migrated** (insufficient obs / zero-variance guards for
+  excess_return / factor columns). —
+  Locked by `tests/testthat/test_models.R` ::
+  `test_that("All four factor models: fit+abnormal_returns emits exactly one warning on degenerate input")`.
+
+* **Per-model CONTRACT-05 baseline fixtures** (MarketAdjusted, CompPeriodMean,
+  Custom, BHARModel, VolumeModel, VolatilityModel, FF3, FF5, Carhart4). —
+  Locked by `tests/testthat/test_models.R` ::
+  `test_that("MarketAdjustedModel: valid-input baseline invariance (CONTRACT-05)")`,
+  `test_that("FamaFrench3FactorModel: valid-input baseline invariance (CONTRACT-05)")`,
+  etc.
+
+* **RollingWindowModel migrated** (Guard 1: insufficient obs; Guard 2: all-NA
+  estimation window; Guard 3: last-window NA params; df reflects finite pair
+  count, not nrow — WR-04). —
+  Locked by `tests/testthat/test_models_time_varying.R` ::
+  `test_that("RollingWindowModel: lenient mode — insufficient obs (Guard 1) — one warning, all-NA ARs")`,
+  `test_that("WR-04: RollingWindowModel df reflects finite pair count not nrow (NA-heavy window)")`.
+
+* **GARCHModel migrated** (insufficient obs, zero-variance guards; pre-call guards
+  added so `rugarch::ugarchfit()` never receives fewer rows than GARCH order). —
+  Locked by `tests/testthat/test_models_time_varying.R` ::
+  `test_that("GARCHModel: lenient mode — insufficient obs — one warning, all-NA ARs")`,
+  `test_that("GARCHModel: strict mode — insufficient obs — named error")`.
+
+* **DCCGARCHModel migrated** (insufficient obs, zero-variance guards). —
+  Locked by `tests/testthat/test_models_time_varying.R` ::
+  `test_that("DCCGARCHModel: lenient mode — insufficient obs — one warning, all-NA ARs")`.
+
+* **GARCHModel / DCCGARCHModel `calculate_statistics()` failure wrapping**
+  (EXTERNAL-04: `tryCatch` resets `is_fitted = FALSE`, emits named warning,
+  returns NA ARs when rugarch fitting fails). —
+  Locked by `tests/testthat/test_models_time_varying.R` ::
+  `test_that("GARCHModel: calculate_statistics failure resets is_fitted=FALSE + named warning + NA ARs")`,
+  `test_that("DCCGARCHModel: calculate_statistics failure → exactly ONE warning (fit+abnormal_returns combined)")`.
+
+### Test-Statistic Guards (Phase 2 — STATS-01..04)
+
+* **STATS-01: `ARTTest`, `CARTTest`, `BHARTTest` return NA (not Inf/NaN) when
+  `sigma == 0`** (divide-by-zero guard). —
+  Locked by `tests/testthat/test_ar_car_test_statistics.R` ::
+  `test_that("STATS-01: ARTTest returns NA (not Inf/NaN) when sigma == 0")`,
+  `test_that("STATS-01: CARTTest returns NA (not Inf/NaN) in car_t when sigma == 0")`,
+  `test_that("STATS-01: BHARTTest returns NA (not Inf/NaN) in bhar_t when sigma == 0")`.
+
+* **STATS-02: `BMPTest`, `KolariPynnonenTest`, `PatellZTest`, `CSectTTest` join
+  on `event_id` (not `firm_symbol`) — fixes GH #7 many-to-many inflation.** —
+  Locked by `tests/testthat/test_multi_event_statistics.R` ::
+  `test_that("BMPTest does not inflate n_events when firms recur (GH #7)")`,
+  `test_that("KolariPynnonenTest does not inflate n_events when firms recur (GH #7)")`,
+  `test_that("STATS-02: CSectTTest does not inflate n_events when firms recur")`.
+
+* **STATS-04: `PatellZTest`, `SignTest` return NA when `n_events == 1`** (added
+  `n_events <= 1` guards; `BMPTest`, `CSectTTest` already returned NA via
+  `sd(single_value) = NA`). —
+  Locked by `tests/testthat/test_multi_event_statistics.R` ::
+  `test_that("STATS-04: PatellZTest aar_z is NA (not finite) when n_events == 1")`,
+  `test_that("STATS-04: SignTest sign_z is NA (not finite) when n_events == 1")`.
+
+### Pipeline Hardening (Phase 3 — PIPELINE-01..03)
+
+* **PIPELINE-01: `prepare_event_study()` honours degenerate mode on missing
+  event date** — strict errors naming component/event/firm; lenient warns and
+  degrades to all-zero windows. —
+  Locked by `tests/testthat/test_prepare.R` ::
+  `test_that("missing event date strict: stop() names component, event_id, firm_symbol")`,
+  `test_that("missing event date lenient: exactly one warning naming event_id and firm_symbol")`.
+
+* **PIPELINE-02: `export_results()` NA-safe CAR cumsum** (reverted false
+  coalesce — NA must propagate through cumsum, not be silently replaced with 0;
+  CR-01). —
+  Locked by `tests/testthat/test_export.R` ::
+  `test_that("export_results: CAR — interior NA propagates through cumsum (correct NA behavior)")`,
+  `test_that("export_results: NA abnormal_returns in AR column preserved as NA (not 0)")`.
+
+* **PIPELINE-03: `cross_sectional_regression()` singular/collinear guard** —
+  returns NA `std.error/statistic/p.value` with one warning instead of crashing;
+  `sandwich` absent degrades to OLS SEs with a warning. —
+  Locked by `tests/testthat/test_cross_sectional.R` ::
+  `test_that("singular design: collinear regressor returns NA std.error/statistic/p.value + one warning")`,
+  `test_that("sandwich absent: emits warning() naming robust SEs and OLS fallback")`.
+
+### External-Package Wrapping (Phase 3 — EXTERNAL-01..04)
+
+* **EXTERNAL-01..03: Panel DiD estimators (`callaway_santanna`,
+  `dechaisemartin_dhaultfoeuille`, `borusyak_jaravel_spiess`) return `NULL`
+  results with a warning when the required package is absent or the estimator
+  fails.** —
+  Locked by `tests/testthat/test_panel.R` ::
+  `test_that("callaway_santanna warns and returns task with NULL results when did is absent")`.
+
+* **EXTERNAL-04: `estimate_synthetic_control()` empty-donor-pool guard** —
+  returns `NULL` with a warning instead of crashing when `quadprog::solve.QP`
+  or the donor pool is empty. —
+  Locked by `tests/testthat/test_synthetic_control.R` ::
+  `test_that("estimate_synthetic_control with quadprog produces valid weights")`.
+
+### Review Fix Round (Phase 1–3 — CR/WR/IN)
+
+* **WR-01: `.degenerate_handled = TRUE` set in `calculate_statistics()`
+  `tryCatch` path** — ensures GARCH/DCC failure path also honours one-warning
+  guarantee (set in the catch block, not lost). —
+  Locked by `tests/testthat/test_models_time_varying.R` ::
+  `test_that("GARCHModel: calculate_statistics failure → exactly ONE warning (fit+abnormal_returns combined)")`.
+
+* **WR-02: External-package wrapper emits warning when estimator returns NULL
+  results** (was silently producing a NULL task). —
+  Locked by `tests/testthat/test_panel.R` ::
+  `test_that("callaway_santanna warns and returns task with NULL results when did is absent")`.
+
+* **WR-03: ParameterSet stores normalised `match.arg` value** — field now holds
+  `"strict"` or `"lenient"` (not raw user input). —
+  Locked by `tests/testthat/test_contract.R` ::
+  `test_that("CONTRACT-02: ParameterSet strict field resolves to strict")`.
+
+* **IN-01: Removed redundant `degenerate_mode` / `event_id` / `firm_symbol`
+  field re-declarations in `MarketModel`** — fields are defined once on
+  `ModelBase`. —
+  Locked by `tests/testthat/test_contract.R` (model construction and field
+  assignment exercise these fields).
+
+* **IN-02: Standardised package option key to `EventStudy.degenerate_handling`**
+  (was inconsistently named in early drafts). —
+  Locked by `tests/testthat/test_contract.R` ::
+  `test_that("CONTRACT-02: package option overrides default when field is NULL")`.
+
+* **IN-03: `withr` declared in `DESCRIPTION Suggests`** (was missing; tests
+  using `withr::with_options` required it). —
+  Verified by `R CMD check` and exercised by all `withr::with_options` calls
+  in `tests/testthat/test_contract.R`.
+
+* **CR-01: Reverted export `CAR` coalesce** — see PIPELINE-02 above.
+
+* **CR-02: Empty-donor-pool `solve.QP` guard** — see EXTERNAL-04 above.
+
+### Regression Net (Phase 4 — TEST-01/02)
+
+* **TEST-02: `test_contract_matrix.R` — cross-component degenerate-input
+  regression net.** Table-driven registry of 25 rows (14 models + 10
+  contract-covered test statistics + 1 pipeline path) iterated in strict and
+  lenient modes. Locked by `tests/testthat/test_contract_matrix.R` ::
+  `test_that("contract-matrix registry is exhaustive")` (asserts `length == 25L`,
+  sub-counts 14/10/1, exclusions reconcile to 12 stat classes) and all
+  per-component `test_that("contract-matrix [strict] <label> ...")` /
+  `test_that("contract-matrix [lenient] <label> ...")` rows.
+
+---
+
+# EventStudy 0.40.0
+
+## Bug Fixes
+
+* `BMPTest`, `KolariPynnonenTest`, and `PatellZTest` joined the per-event
+  model (sigma / forecast-error-corrected sigma) on `firm_symbol` instead of
+  `event_id`. When a firm appeared in more than one event this produced a
+  many-to-many join that duplicated rows, inflating `n_events` and the test
+  statistics (`bmp_t`, `kp_t`, `aar_z`). The joins and per-event groupings now
+  key on `event_id` (GH #7).
+
+## New Features
+
+* 13 return models: Market Model, Market Adjusted, Comparison Period Mean
+  Adjusted, Custom Model, Fama-French 3-Factor, Fama-French 5-Factor,
+  Carhart 4-Factor, GARCH, BHAR, Volume, and Volatility models.
+* 11 test statistics: AR T-Test, CAR T-Test, BHAR T-Test, Cross-Sectional
+  T-Test, Patell Z-Test, Sign Test, Generalized Sign Test, Rank Test,
+  BMP Test, and Calendar-Time Portfolio Test.
+* Cross-sectional regression of CARs on firm characteristics with
+  heteroskedasticity-consistent standard errors.
+* Intraday event study support with POSIXct timestamps.
+* Panel (DiD) event study module with TWFE and Sun-Abraham estimators,
+  including cluster-robust standard errors.
+* Export results to CSV, Excel, and LaTeX formats.
+* Tidy method for converting results to long-format tibbles.
+* Diagnostic tools: model residual plots, estimation window checks.
+* 10 vignettes covering introduction, custom models, custom test statistics,
+  result extraction, panel event studies, cross-sectional analysis, factor
+  models/BHAR, diagnostics, volume/volatility studies, and intraday studies.

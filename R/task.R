@@ -1,0 +1,392 @@
+#' Event Study Task
+#'
+#' The Event Study task contains all necessary data for performing an event
+#' study. Furthermore, all calculations are saved in the internal dataframe
+#' named data_tbl.
+#'
+#' @family eventstudy-pipeline
+#' @export
+EventStudyTask = R6::R6Class(classname = "EventStudyTask",
+                             public = list(
+                               #' @field data_tbl All calculations are saved in
+                               #' this dataframe. The dataframe is a nested
+                               #' object with each row is one event, identified
+                               #' by the event id, the group, and the firm
+                               #' symbol.
+                               data_tbl = NULL,
+                               #' @field aar_caar_tbl Placeholder for AAR and
+                               #' CAAR test statistics.
+                               aar_caar_tbl = NULL,
+                               #' @field .keys event identifier. Do not change.
+                               .keys = c('event_id', 'group', 'firm_symbol'),
+                               #' @field .index The time column name
+                               .index = 'date',
+                               #' @field .target The price column name.
+                               .target = 'adjusted',
+                               #' @field .request_file_columns The necessary
+                               #'   column names of the request dataframe.
+                               #'   \code{estimation_window_length} here is an
+                               #'   input count (number of trading days before
+                               #'   the event window); it is distinct from the
+                               #'   derived 0/1 \code{estimation_window} flag
+                               #'   column that \code{prepare_event_study()}
+                               #'   later adds to each event's nested data.
+                               .request_file_columns = c("event_id", "firm_symbol", "index_symbol", "event_date",
+                                                         "group", "event_window_start", "event_window_end",
+                                                         "shift_estimation_window", "estimation_window_length"),
+                               #' @field factor_tbl Optional factor data for multi-factor models
+                               #'   (Fama-French, Carhart). Must contain a \code{date} column.
+                               factor_tbl = NULL,
+                               #' @title Initialization of an Event Study task.
+                               #'
+                               #' @description Create a new EventStudyTask from stock data, reference
+                               #' market data, and an event request specification.
+                               #'
+                               #' @param firm_stock_data_tbl Dataframe with firm
+                               #'   stock data. This dataframe must contain the
+                               #'   stock (col: symbol) the date (col: date)
+                               #'   and the price (col: adjusted) column.
+                               #' @param reference_tbl Dataframe with firm
+                               #'   reference data.
+                               #' @param request_tbl The request dataframe for
+                               #'   each event.
+                               #' @param factor_tbl Optional dataframe with factor data
+                               #'   (e.g., Fama-French factors). Must contain a \code{date}
+                               #'   column plus factor columns.
+                               initialize = function(firm_stock_data_tbl,
+                                                     reference_tbl,
+                                                     request_tbl,
+                                                     factor_tbl = NULL) {
+                                 # Validate input:
+                                 # Check if necessary columns are in the dataframes.
+                                 firm_stock_data_tbl %>% private$check_data_input("Firm table")
+                                 reference_tbl %>% private$check_data_input("Reference table")
+                                 request_tbl %>% private$check_request_input()
+
+                                 # Rename symbol and price identifier. This is
+                                 # necessary as we want to have both price
+                                 # data in the same dataframe.
+                                 firm_stock_data_tbl = firm_stock_data_tbl %>% private$rename_columns(id="firm")
+                                 reference_tbl = reference_tbl %>% private$rename_columns(id="index")
+
+                                 # Join index data to firm data
+                                 firm_stock_data_tbl = firm_stock_data_tbl %>%
+                                   private$append_index_tbl(reference_tbl, request_tbl)
+
+                                 # Nest stock data: the identifier is the event
+                                 # id, the group, and the firm symbol.
+                                 self$data_tbl = firm_stock_data_tbl %>%
+                                   dplyr::group_by(event_id, group, firm_symbol) %>%
+                                   tidyr::nest()
+
+                                 # Nest request data similarly as the stock data
+                                 request_tbl = request_tbl %>%
+                                   dplyr::group_by(event_id, group, firm_symbol) %>%
+                                   tidyr::nest() %>%
+                                   dplyr::rename("request" = "data")
+
+                                 self$data_tbl = self$data_tbl %>%
+                                   dplyr::left_join(request_tbl, by=self$.keys)
+
+                                 # Store factor table for multi-factor models
+                                 if (!is.null(factor_tbl)) {
+                                   self$factor_tbl <- factor_tbl
+                                 }
+                               },
+
+                               #' @description
+                               #' Print a summary of the EventStudyTask.
+                               print = function(...) {
+                                 cat("EventStudyTask\n")
+                                 n_events = nrow(self$data_tbl)
+                                 cat("  Events:  ", n_events, "\n")
+
+                                 groups = unique(self$data_tbl$group)
+                                 cat("  Groups:  ", length(groups), "(", paste(groups, collapse=", "), ")\n")
+
+                                 symbols = unique(self$data_tbl$firm_symbol)
+                                 cat("  Symbols: ", length(symbols), "\n")
+
+                                 # Check if models have been fitted
+                                 has_model = "model" %in% names(self$data_tbl)
+                                 cat("  Fitted:  ", has_model, "\n")
+
+                                 # Check if AR has been calculated
+                                 if (has_model) {
+                                   has_ar = any(purrr::map_lgl(self$data_tbl$data, ~"abnormal_returns" %in% names(.x)))
+                                   cat("  AR calc: ", has_ar, "\n")
+                                 }
+
+                                 # Check if multi-event stats exist
+                                 has_aar = !is.null(self$aar_caar_tbl)
+                                 cat("  AAR/CAAR:", has_aar, "\n")
+
+                                 invisible(self)
+                               },
+
+                               #' @description
+                               #' Summarize the event study results.
+                               #'
+                               #' @return A list with summary information about the event study results.
+                               summary = function() {
+                                 result = list()
+                                 result$n_events = nrow(self$data_tbl)
+                                 result$groups = unique(self$data_tbl$group)
+                                 result$symbols = unique(self$data_tbl$firm_symbol)
+
+                                 has_model = "model" %in% names(self$data_tbl)
+
+                                 if (has_model) {
+                                   # Model fit summary
+                                   result$model_stats = purrr::map(self$data_tbl$model, function(m) {
+                                     stats = m$statistics
+                                     list(
+                                       is_fitted = m$is_fitted,
+                                       sigma = stats$sigma,
+                                       r2 = stats$r2,
+                                       alpha = stats$alpha,
+                                       beta = stats$beta
+                                     )
+                                   })
+                                   names(result$model_stats) = self$data_tbl$firm_symbol
+                                 }
+
+                                 if (!is.null(self$aar_caar_tbl)) {
+                                   result$aar_caar = self$aar_caar_tbl
+                                 }
+
+                                 class(result) = "EventStudySummary"
+                                 result
+                               },
+
+                               #' @description
+                               #' Extract abnormal returns for a single event.
+                               #'
+                               #' @param event_id The event identifier.
+                               #'
+                               #' @return A tibble with abnormal returns for the event window.
+                               get_ar = function(event_id = NULL) {
+                                 data = private$get_event_data(event_id)
+                                 if (!"abnormal_returns" %in% names(data)) {
+                                   rlang::abort(
+                                     "Abnormal returns have not been calculated yet. Run fit_model() first.",
+                                     class = c("eventstudy_error_not_fitted", "eventstudy_error"))
+                                 }
+                                 data %>%
+                                   dplyr::filter(event_window == 1) %>%
+                                   dplyr::select(relative_index, abnormal_returns)
+                               },
+
+                               #' @description
+                               #' Extract cumulative abnormal returns for a single event.
+                               #'
+                               #' @param event_id The event identifier.
+                               #'
+                               #' @return A tibble with cumulative abnormal returns for the event window.
+                               get_car = function(event_id = NULL) {
+                                 ar = self$get_ar(event_id)
+                                 ar %>%
+                                   dplyr::mutate(car = cumsum(abnormal_returns))
+                               },
+
+                               #' @description
+                               #' Extract average abnormal returns across events.
+                               #'
+                               #' @param group Optional group name to filter by.
+                               #' @param stat_name Name of the multi-event test statistic
+                               #'   to extract. Defaults to "CSectT".
+                               #'
+                               #' @return A tibble with AAR/CAAR results.
+                               get_aar = function(group = NULL, stat_name = "CSectT") {
+                                 if (is.null(self$aar_caar_tbl)) {
+                                   rlang::abort(
+                                     "AAR/CAAR have not been calculated yet. Run calculate_statistics() first.",
+                                     class = c("eventstudy_error_not_fitted", "eventstudy_error"))
+                                 }
+                                 tbl = self$aar_caar_tbl
+                                 if (!is.null(group)) {
+                                   tbl = tbl %>% dplyr::filter(group == !!group)
+                                 }
+                                 if (stat_name %in% names(tbl)) {
+                                   tbl[[stat_name]]
+                                 } else {
+                                   available <- setdiff(names(tbl), c("group", "data", "model"))
+                                   rlang::abort(
+                                     paste0("`stat_name` = \"", stat_name, "\" not found. Available: ",
+                                            paste(utils::head(available, 5), collapse = ", "),
+                                            if (length(available) > 5) " ..."),
+                                     class = c("eventstudy_error_unknown_statistic", "eventstudy_error"))
+                                 }
+                               },
+
+                               #' @description
+                               #' Extract model statistics for a single event.
+                               #'
+                               #' @param event_id The event identifier.
+                               #'
+                               #' @return A list with model statistics.
+                               get_model_stats = function(event_id = NULL) {
+                                 if (!"model" %in% names(self$data_tbl)) {
+                                   rlang::abort(
+                                     "Models have not been fitted yet. Run fit_model() first.",
+                                     class = c("eventstudy_error_not_fitted", "eventstudy_error"))
+                                 }
+                                 if (is.null(event_id)) {
+                                   event_id = self$data_tbl$event_id[1]
+                                 }
+                                 row = self$data_tbl %>%
+                                   dplyr::filter(event_id == !!event_id)
+                                 if (nrow(row) == 0) {
+                                   rlang::abort(
+                                     paste0("`event_id` = \"", event_id, "\" not found."),
+                                     class = c("eventstudy_error_unknown_event_id", "eventstudy_error"))
+                                 }
+                                 row$model[[1]]$statistics
+                               }
+                             ),
+                             active = list(
+                               #' @field symbols Read-only field to get the firm symbols.
+                               symbols = function(value) {
+                                 if (missing(value)) {
+                                   self$data_tbl$firm_symbol
+                                 } else {
+                                   stop("`$symbols` is read only", call. = FALSE)
+                                 }
+                               },
+                               #' @field symbol_data Read-only field to get the firm symbol data.
+                               symbol_data = function(value) {
+                                 if (missing(value)) {
+                                   self$data_tbl
+                                 } else {
+                                   stop("`$symbol_data` is read only", call. = FALSE)
+                                 }
+                               },
+                               #' @field group_level_data Read-only field to get the group data.
+                               group_level_data = function(value) {
+                                 if (missing(value)) {
+                                   self$data_tbl %>%
+                                     dplyr::select(self$.keys, data) %>%
+                                     tidyr::unnest(data) %>%
+                                     dplyr::group_by(group) %>%
+                                     tidyr::nest()
+                                 } else {
+                                   stop("`$group_level_data` is read only", call. = FALSE)
+                                 }
+                               }
+                             ),
+                             private = list(
+                               get_event_data = function(event_id = NULL) {
+                                 if (is.null(event_id)) {
+                                   event_id = self$data_tbl$event_id[1]
+                                 }
+                                 row = self$data_tbl %>%
+                                   dplyr::filter(event_id == !!event_id)
+                                 if (nrow(row) == 0) {
+                                   rlang::abort(
+                                     paste0("`event_id` = \"", event_id, "\" not found."),
+                                     class = c("eventstudy_error_unknown_event_id", "eventstudy_error"))
+                                 }
+                                 row$data[[1]]
+                               },
+                               check_request_input = function(tbl) {
+                                 if (any(! self$.request_file_columns %in% names(tbl))) {
+                                   missing_cols = self$.request_file_columns[!self$.request_file_columns %in% names(tbl)]
+                                   rlang::abort(
+                                     paste0("Request file missing columns: `",
+                                            paste(utils::head(missing_cols, 5), collapse = "`, `"), "`",
+                                            if (length(missing_cols) > 5) " ..."),
+                                     class = c("eventstudy_error_missing_column", "eventstudy_error"))
+                                 }
+                               },
+                               check_data_input = function(tbl, tbl_name="firm data") {
+                                 col_names = names(tbl)
+                                 if (! "symbol" %in% col_names) {
+                                   rlang::abort(
+                                     paste0(tbl_name, ": Input dataframe does not contain the stock identifier `symbol` column."),
+                                     class = c("eventstudy_error_missing_column", "eventstudy_error"))
+                                 }
+                                 if (! self$.index %in% col_names) {
+                                   rlang::abort(
+                                     paste0(tbl_name, ": Input dataframe does not contain the date `", self$.index, "` column."),
+                                     class = c("eventstudy_error_missing_column", "eventstudy_error"))
+                                 }
+                                 if (! self$.target %in% col_names) {
+                                   rlang::abort(
+                                     paste0(tbl_name, ": Input dataframe does not contain the price `", self$.target, "` column."),
+                                     class = c("eventstudy_error_missing_column", "eventstudy_error"))
+                                 }
+                               },
+                               rename_columns = function(tbl, id="firm") {
+                                 symbol_name = stringr::str_c(id, "_symbol")
+                                 price_name = stringr::str_c(id, "_", self$.target)
+                                 tbl %>%
+                                   rename(!!symbol_name := "symbol",
+                                          !!price_name := self$.target)
+                               },
+                               append_index_tbl = function(firm_tbl, reference_tbl, request_tbl) {
+                                 request_tbl %>%
+                                   dplyr::select(event_id, group, firm_symbol, index_symbol) -> request_join_idx_tbl
+
+                                 # relationship = "many-to-many" (2026-09-24, C10 final gate): a
+                                 # firm_symbol recurring across multiple events (multiple request
+                                 # rows, one firm) genuinely produces a many-to-many join here --
+                                 # each of the firm's price rows must be duplicated once per event
+                                 # it belongs to, matching the many-to-many relationship dplyr's
+                                 # >=1.1.0 join diagnostics now warn about by default. This has
+                                 # always been the intended join shape (A4/GH#7); declaring it
+                                 # explicitly silences the diagnostic without changing any row.
+                                 firm_tbl %>%
+                                   dplyr::left_join(request_join_idx_tbl, by = "firm_symbol",
+                                                     relationship = "many-to-many") %>%
+                                   dplyr::left_join(reference_tbl, by = c("index_symbol", "date"))
+                               }
+                             )
+)
+
+
+#' Format method for EventStudySummary
+#'
+#' Builds the character vector rendered by \code{print.EventStudySummary}
+#' (one element per output line). See \code{\link{print.EventStudySummary}}.
+#'
+#' @param x An EventStudySummary object.
+#' @param ... Additional arguments (unused).
+#'
+#' @return A character vector, one element per printed line.
+#'
+#' @export
+format.EventStudySummary = function(x, ...) {
+  utils::capture.output({
+    cat("Event Study Summary\n")
+    cat("===================\n")
+    cat("Events: ", x$n_events, "\n")
+    cat("Groups: ", paste(x$groups, collapse = ", "), "\n")
+    cat("Symbols:", paste(x$symbols, collapse = ", "), "\n\n")
+
+    if (!is.null(x$model_stats)) {
+      cat("Model Statistics:\n")
+      for (sym in names(x$model_stats)) {
+        s = x$model_stats[[sym]]
+        if (isTRUE(s$is_fitted)) {
+          cat("  ", sym, ": alpha=", round(s$alpha %||% NA_real_, 6),
+              " beta=", round(s$beta %||% NA_real_, 4),
+              " sigma=", round(s$sigma %||% NA_real_, 6),
+              " R2=", round(s$r2 %||% NA_real_, 4), "\n")
+        } else {
+          cat("  ", sym, ": NOT FITTED\n")
+        }
+      }
+    }
+  })
+}
+
+#' Print method for EventStudySummary
+#'
+#' @param x An EventStudySummary object.
+#' @param ... Additional arguments (unused).
+#'
+#' @export
+print.EventStudySummary = function(x, ...) {
+  cat(format(x), sep = "\n")
+  invisible(x)
+}

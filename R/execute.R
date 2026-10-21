@@ -1,0 +1,303 @@
+#' Run a Complete Event Study
+#'
+#' Convenience wrapper that runs the full event study pipeline: prepare data,
+#' fit models, and calculate test statistics in a single call.
+#'
+#' @param task An EventStudyTask object.
+#' @param parameter_set A ParameterSet object defining the event study.
+#'   Defaults to a new ParameterSet with default settings.
+#' @param report Logical. When \code{FALSE} (default), the function behaves
+#'   exactly as before this parameter was added. When \code{TRUE}, also renders
+#'   a report via \code{\link{es_report}()} after the pipeline completes and
+#'   attaches the rendered path(s) as \code{attr(task, "report_path")}.
+#' @param report_args Named list forwarded to \code{\link{es_report}()} when
+#'   \code{report = TRUE}. May include \code{output_file}, \code{format},
+#'   \code{provider}, and any other argument accepted by \code{es_report()}.
+#'   Defaults to \code{list()} (uses \code{es_report()} defaults, which render
+#'   \code{"event_study_report.html"} in the working directory).
+#' @param verbose Logical; if FALSE, suppress informational messages. Default
+#'   \code{getOption("eventstudy.verbose", TRUE)}.
+#'
+#' @return The task object with all results computed. When \code{report = TRUE},
+#'   the returned task additionally carries \code{attr(task, "report_path")}
+#'   with the path(s) of the rendered report file(s). The return type is always
+#'   a fitted \code{EventStudyTask} in both paths.
+#'
+#' @examples
+#' \donttest{
+#' data(dieselgate)
+#' task <- EventStudyTask$new(dieselgate$firm, dieselgate$index, dieselgate$request)
+#'
+#' # Run the pipeline and render a report to a temporary directory
+#' out  <- file.path(tempdir(), "event_study_report.html")
+#' task <- run_event_study(task, ParameterSet$new(), report = TRUE,
+#'                         report_args = list(output_file = out))
+#' attr(task, "report_path")  # path to the rendered HTML
+#' }
+#'
+#' @family eventstudy-pipeline
+#' @seealso
+#'   \code{\link{prepare_event_study}}, \code{\link{fit_model}},
+#'   \code{\link{calculate_statistics}}, \code{\link{MarketModel}},
+#'   \code{\link{ARTTest}}
+#'
+#' @export
+run_event_study = function(task,
+                           parameter_set = ParameterSet$new(),
+                           report = FALSE,
+                           report_args = list(),
+                           verbose = getOption("eventstudy.verbose", TRUE)) {
+  task = prepare_event_study(task, parameter_set)
+  task = fit_model(task, parameter_set)
+  task = calculate_statistics(task, parameter_set)
+
+  if (isTRUE(report)) {
+    paths <- do.call(es_report, c(list(task = task), report_args))
+    attr(task, "report_path") <- paths
+    .inform(paste0("Report written to: ", paste(paths, collapse = ", ")), verbose)
+  }
+
+  task
+}
+
+
+#' Train the defined model on each event and calculate the abnormal return.
+#'
+#' @param task The event study task
+#' @param parameter_set The parameter set that defines the event study.
+#'
+#' @return task
+#'
+#' @family eventstudy-pipeline
+#' @seealso
+#'   \code{\link{run_event_study}}, \code{\link{prepare_event_study}},
+#'   \code{\link{calculate_statistics}}
+#'
+#' @export
+fit_model = function(task, parameter_set) {
+  # Resolve the degenerate-input handling mode once for the entire fit pass
+  mode <- .resolve_degenerate_mode(parameter_set$degenerate_handling)
+
+  # Fit a return model for each event using an explicit row-indexed map so that
+  # the outer row keys (event_id, firm_symbol) are available inside each fit
+  # call.  purrr::pmap-inside-dplyr::mutate is forbidden per plan (NSE
+  # evaluation is untested in this context); the explicit seq_len approach is
+  # deterministic and avoids NSE ambiguity.
+  # Per-event short-estimation-window advisories are collected and re-issued
+  # as ONE summary warning, so N short events give one warning, not N.
+  short_events <- list()
+  task$data_tbl$model <- withCallingHandlers(
+    purrr::map(
+      seq_len(nrow(task$data_tbl)),
+      function(i) {
+        .initialize_and_fit_model(
+          task$data_tbl$data[[i]],
+          parameter_set$return_model,
+          degenerate_mode = mode,
+          event_id        = task$data_tbl$event_id[[i]],
+          firm_symbol     = task$data_tbl$firm_symbol[[i]]
+        )
+      }
+    ),
+    eventstudy_short_estimation_window = function(w) {
+      short_events[[length(short_events) + 1L]] <<- w
+      invokeRestart("muffleWarning")
+    }
+  )
+  if (length(short_events) == 1L) {
+    warning(short_events[[1L]])
+  } else if (length(short_events) > 1L) {
+    ids   <- vapply(short_events, function(w) as.character(w$event_id %||% NA), character(1))
+    n_min <- min(vapply(short_events, function(w) as.numeric(w$n_valid), numeric(1)))
+    shown <- utils::head(ids, 10L)
+    msg <- paste0(length(short_events), " event(s) have fewer than ",
+                  .MIN_ESTIMATION_OBS_RECOMMENDED,
+                  " valid estimation observations (minimum ", n_min,
+                  "); estimates may be unreliable (event_id: ",
+                  paste(shown, collapse = ", "),
+                  if (length(ids) > length(shown)) ", ..." else "", ")")
+    warning(structure(
+      class = c("eventstudy_short_estimation_window", "warning", "condition"),
+      list(message = msg, call = NULL, event_id = ids, n_valid = n_min)
+    ))
+  }
+
+  # Calculate abnormal returns for each event
+  task$data_tbl = task$data_tbl %>%
+    dplyr::mutate(data = purrr::map2(.x=data,
+                                     .y=model,
+                                     .f=.calculate_abnormal_returns))
+  task
+}
+
+
+#' @noRd
+.initialize_and_fit_model <- function(data_tbl, return_model,
+                                       degenerate_mode = "lenient",
+                                       event_id = NULL,
+                                       firm_symbol = NULL) {
+  # Each event needs its own model, therefore a deep clone is necessary
+  cloned_return_model = return_model$clone(deep=TRUE)
+  # Thread contract context \u2014 models read these fields inside fit()
+  cloned_return_model$degenerate_mode <- degenerate_mode
+  cloned_return_model$event_id        <- event_id
+  cloned_return_model$firm_symbol     <- firm_symbol
+  cloned_return_model$fit(data_tbl)
+  cloned_return_model
+}
+
+
+#' @noRd
+.calculate_abnormal_returns <- function(data_tbl, return_model) {
+  return_model$abnormal_returns(data_tbl)
+}
+
+
+#' Calculate test statistics
+#'
+#' @param task The event study task
+#' @param parameter_set The parameter set that defines the event study.
+#'
+#' @return task
+#'
+#' @family eventstudy-pipeline
+#' @seealso
+#'   \code{\link{run_event_study}}, \code{\link{prepare_event_study}},
+#'   \code{\link{fit_model}}
+#'
+#' @export
+calculate_statistics = function(task, parameter_set) {
+  # Single event statistic calculation
+  if (!is.null(parameter_set$single_event_statistics)) {
+    task$data_tbl = task$data_tbl %>%
+      dplyr::mutate(statistics = purrr::map2(.x=data,
+                                             .y=model,
+                                             .f=.calculate_single_event_test_statistics,
+                                             statistic_set=parameter_set$single_event_statistics))
+
+    # Transpose results such that each test statistic result has its own column
+    task$data_tbl$statistics %>%
+      purrr::transpose() %>%
+      as_tibble() -> stats_tbl
+
+    # Remove existing statistic columns to allow idempotent re-runs
+    existing_stat_cols <- intersect(names(stats_tbl), names(task$data_tbl))
+    if (length(existing_stat_cols) > 0) {
+      task$data_tbl <- task$data_tbl[, !names(task$data_tbl) %in% existing_stat_cols,
+                                      drop = FALSE]
+    }
+
+    task$data_tbl = cbind(task$data_tbl, stats_tbl) %>%
+      dplyr::select(-statistics)
+
+    # Shape contract hook (default-off; no-op unless the option is set)
+    if (.resolve_shape_contract_mode()) {
+      stat_names_se <- names(stats_tbl)
+      for (sn in stat_names_se) {
+        stat_col <- task$data_tbl[[sn]]
+        if (!is.null(stat_col) && length(stat_col) > 0) {
+          .check_single_event_shape(stat_col[[1]], sn)
+        }
+      }
+    }
+  }
+
+  # Multiple events test statistic calculation
+  if (!is.null(parameter_set$multi_event_statistics)) {
+    # Resolve the degenerate-input handling mode once for the whole pass
+    # (A2, 2026-09-24 re-evaluation): applied once per group inside
+    # .calculate_multiple_event_test_statistics(), before any of the
+    # configured statistics run, so N statistics produce at most one warning.
+    me_mode <- .resolve_degenerate_mode(parameter_set$degenerate_handling)
+
+    # The data must be reshaped for these calculations as we need to consider the
+    # grouping of the events.
+    task$data_tbl %>%
+      dplyr::select(task$.keys, model) %>%
+      dplyr::group_by(group) %>%
+      tidyr::nest() %>%
+      dplyr::rename(model = data) -> model_tbl
+
+    task$aar_caar_tbl = task$data_tbl %>%
+      dplyr::select(task$.keys, data) %>%
+      tidyr::unnest(data) %>%
+      dplyr::group_by(group) %>%
+      tidyr::nest() %>%
+      dplyr::left_join(model_tbl, by="group") %>%
+      dplyr::mutate(statistics = purrr::map2(.x=data,
+                                             .y=model,
+                                             .f = .calculate_multiple_event_test_statistics,
+                                             statistic_set=parameter_set$multi_event_statistics,
+                                             degenerate_mode=me_mode))
+
+    # Transpose results such that each test statistic result has its own column
+    task$aar_caar_tbl$statistics %>%
+      purrr::transpose() %>%
+      as_tibble() -> stats_tbl
+    task$aar_caar_tbl = cbind(task$aar_caar_tbl, stats_tbl) %>%
+      dplyr::select(-statistics)
+
+    # Shape contract hook for multi-event results (default-off)
+    if (.resolve_shape_contract_mode()) {
+      stat_names_me <- names(stats_tbl)
+      for (sn in stat_names_me) {
+        stat_col <- task$aar_caar_tbl[[sn]]
+        if (!is.null(stat_col) && length(stat_col) > 0) {
+          .check_aar_caar_shape(stat_col[[1]], sn)
+        }
+      }
+    }
+  }
+
+  task
+}
+
+
+#' @noRd
+.calculate_single_event_test_statistics = function(data_tbl, fitted_model, statistic_set) {
+  # Calculate test statistics
+  statistic_set$tests %>%
+    purrr::map(.f = function(test_statistic, data_tbl, fitted_model) {
+      data_tbl %>%
+        test_statistic$compute(fitted_model)
+    }, data_tbl=data_tbl, fitted_model=fitted_model) -> res
+
+  # Extract names
+  statistic_set$tests %>%
+    purrr::map(.f = function(test_statistic) {
+      test_statistic$name
+    }) -> stat_names
+
+  names(res) = stat_names
+  res
+}
+
+
+#' @noRd
+.calculate_multiple_event_test_statistics = function(data_tbl, model, statistic_set,
+                                                       degenerate_mode = "lenient") {
+  # A2 (2026-09-24 re-evaluation): exclude all-NA events once per group,
+  # before any configured statistic runs, so N statistics produce at most
+  # one warning (not N). Each compute() also re-applies the same exclusion
+  # defensively (a no-op here, but protects direct compute() calls).
+  excl <- .exclude_all_na_events(data_tbl, model, degenerate_mode,
+                                  "multi-event statistics")
+  data_tbl <- excl$data_tbl
+  model    <- excl$model
+
+  # Calculate test statistics
+  statistic_set$tests %>%
+    purrr::map(.f = function(test_statistic, data_tbl) {
+      data_tbl %>%
+        test_statistic$compute(model)
+    }, data_tbl=data_tbl) -> res
+
+  # Extract names
+  statistic_set$tests %>%
+    purrr::map(.f = function(test_statistic) {
+      test_statistic$name
+    }) -> stat_names
+
+  names(res) = stat_names
+  res
+}

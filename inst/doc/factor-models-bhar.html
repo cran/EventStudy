@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Simon Mueller" />
+
+<meta name="date" content="2026-10-09" />
+
+<title>Factor Models, GARCH, and Buy-and-Hold Abnormal Returns</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Factor Models, GARCH, and Buy-and-Hold
+Abnormal Returns</h1>
+<h4 class="author">Simon Mueller</h4>
+<h4 class="date">2026-10-09</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The simple Market Model regresses firm returns on a single market
+index. While widely used, it may miss systematic risk factors that
+explain return variation. The EventStudy package provides several
+alternatives:</p>
+<table>
+<colgroup>
+<col width="30%" />
+<col width="30%" />
+<col width="39%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Class</th>
+<th>Factors</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fama-French 3-Factor</td>
+<td><code>FamaFrench3FactorModel</code></td>
+<td>Market, SMB, HML</td>
+</tr>
+<tr class="even">
+<td>Fama-French 5-Factor</td>
+<td><code>FamaFrench5FactorModel</code></td>
+<td>Market, SMB, HML, RMW, CMA</td>
+</tr>
+<tr class="odd">
+<td>Carhart 4-Factor</td>
+<td><code>Carhart4FactorModel</code></td>
+<td>Market, SMB, HML, MOM</td>
+</tr>
+<tr class="even">
+<td>GARCH(1,1)</td>
+<td><code>GARCHModel</code></td>
+<td>Market (time-varying volatility)</td>
+</tr>
+<tr class="odd">
+<td>BHAR</td>
+<td><code>BHARModel</code></td>
+<td>Market (compounded returns)</td>
+</tr>
+</tbody>
+</table>
+<p>Factor models reduce estimation-window residual variance, yielding
+more powerful tests. GARCH accounts for volatility clustering. BHAR
+avoids the bias from summing daily abnormal returns over long
+horizons.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
+</div>
+<div id="factor-data-the-factor_tbl" class="section level1">
+<h1>Factor Data: The <code>factor_tbl</code></h1>
+<p>Factor models require a <strong>factor table</strong> passed to
+<code>EventStudyTask$new()</code>. This table must contain a
+<code>date</code> column (same format as firm/index data) plus the
+relevant factor columns.</p>
+<div id="required-columns-by-model" class="section level2">
+<h2>Required Columns by Model</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Required columns in <code>factor_tbl</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fama-French 3-Factor</td>
+<td><code>smb</code>, <code>hml</code>, <code>risk_free_rate</code></td>
+</tr>
+<tr class="even">
+<td>Fama-French 5-Factor</td>
+<td><code>smb</code>, <code>hml</code>, <code>rmw</code>,
+<code>cma</code>, <code>risk_free_rate</code></td>
+</tr>
+<tr class="odd">
+<td>Carhart 4-Factor</td>
+<td><code>smb</code>, <code>hml</code>, <code>mom</code>,
+<code>risk_free_rate</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>risk_free_rate</code> column is special: when present,
+<code>prepare_event_study()</code> automatically computes <strong>excess
+returns</strong>:</p>
+<ul>
+<li><code>excess_return = firm_returns - risk_free_rate</code></li>
+<li><code>market_excess = index_returns - risk_free_rate</code></li>
+</ul>
+<p>These are the dependent and independent variables used by the factor
+model regressions.</p>
+</div>
+<div id="sourcing-factor-data" class="section level2">
+<h2>Sourcing Factor Data</h2>
+<p>Fama-French factor data is publicly available from Kenneth French’s
+website. In practice you might use the <code>frenchdata</code> or
+<code>tidyquant</code> packages:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Example: constructing a factor_tbl manually</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># In practice, download from Kenneth French&#39;s data library</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">300</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">format</span>(<span class="fu">seq</span>(<span class="fu">as.Date</span>(<span class="st">&quot;2014-06-01&quot;</span>), <span class="at">by =</span> <span class="st">&quot;day&quot;</span>, <span class="at">length.out =</span> n),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>                <span class="st">&quot;%d.%m.%Y&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>factor_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">date           =</span> dates,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  <span class="at">smb            =</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="fl">0.005</span>),     <span class="co"># Small Minus Big</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="at">hml            =</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="fl">0.005</span>),     <span class="co"># High Minus Low</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>  <span class="at">rmw            =</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="fl">0.004</span>),     <span class="co"># Robust Minus Weak</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  <span class="at">cma            =</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="fl">0.004</span>),     <span class="co"># Conservative Minus Aggressive</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="at">mom            =</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="fl">0.006</span>),     <span class="co"># Momentum</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  <span class="at">risk_free_rate =</span> <span class="fu">rep</span>(<span class="fl">0.0001</span>, n)          <span class="co"># Daily risk-free rate</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="fama-french-three-factor-model" class="section level1">
+<h1>Fama-French Three-Factor Model</h1>
+<p>The three-factor model (Fama &amp; French, 1993) explains stock
+returns using market risk, size (SMB), and value (HML) factors:</p>
+<p><span class="math display">\[R_i - R_f = \alpha + \beta_m (R_m - R_f)
++ \beta_s \text{SMB} + \beta_h \text{HML} + \epsilon\]</span></p>
+<div id="running-the-study" class="section level2">
+<h2>Running the Study</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">300</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">format</span>(<span class="fu">seq</span>(<span class="fu">as.Date</span>(<span class="st">&quot;2014-06-01&quot;</span>), <span class="at">by =</span> <span class="st">&quot;day&quot;</span>, <span class="at">length.out =</span> n),</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                <span class="st">&quot;%d.%m.%Y&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>firm_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">symbol   =</span> <span class="st">&quot;FIRM_A&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">date     =</span> dates,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">adjusted =</span> <span class="dv">100</span> <span class="sc">*</span> <span class="fu">cumprod</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="fl">0.0003</span>, <span class="fl">0.015</span>))</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>)</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>index_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">symbol   =</span> <span class="st">&quot;INDEX_1&quot;</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">date     =</span> dates,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">adjusted =</span> <span class="dv">1000</span> <span class="sc">*</span> <span class="fu">cumprod</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="fl">0.0002</span>, <span class="fl">0.012</span>))</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>)</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>request_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">event_id =</span> <span class="dv">1</span><span class="dt">L</span>, <span class="at">firm_symbol =</span> <span class="st">&quot;FIRM_A&quot;</span>, <span class="at">index_symbol =</span> <span class="st">&quot;INDEX_1&quot;</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">event_date =</span> dates[<span class="dv">200</span>], <span class="at">group =</span> <span class="st">&quot;Test&quot;</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">event_window_start =</span> <span class="sc">-</span><span class="dv">10</span><span class="dt">L</span>, <span class="at">event_window_end =</span> <span class="dv">10</span><span class="dt">L</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">shift_estimation_window =</span> <span class="sc">-</span><span class="dv">11</span><span class="dt">L</span>, <span class="at">estimation_window_length =</span> <span class="dv">150</span><span class="dt">L</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>)</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co"># Pass factor_tbl to the task</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>task <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl,</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>                            <span class="at">factor_tbl =</span> factor_tbl)</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>params <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>  <span class="at">return_calculation =</span> LogReturn<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>  <span class="at">return_model       =</span> FamaFrench3FactorModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>)</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>task <span class="ot">&lt;-</span> task <span class="sc">|&gt;</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>  <span class="fu">prepare_event_study</span>(params) <span class="sc">|&gt;</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>  <span class="fu">fit_model</span>(params) <span class="sc">|&gt;</span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>  <span class="fu">calculate_statistics</span>(params)</span></code></pre></div>
+</div>
+<div id="inspecting-factor-loadings" class="section level2">
+<h2>Inspecting Factor Loadings</h2>
+<p>After fitting, the model stores all factor coefficients:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Model statistics for event 1</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>stats <span class="ot">&lt;-</span> task<span class="sc">$</span>data_tbl<span class="sc">$</span>model[[<span class="dv">1</span>]]<span class="sc">$</span>statistics</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Factor loadings</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>stats<span class="sc">$</span>alpha              <span class="co"># Intercept (Jensen&#39;s alpha)</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>stats<span class="sc">$</span>beta               <span class="co"># Market beta (same as `market_excess`)</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>stats<span class="sc">$</span>smb                <span class="co"># SMB loading</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>stats<span class="sc">$</span>hml                <span class="co"># HML loading</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>stats<span class="sc">$</span>r2                 <span class="co"># R-squared</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>stats<span class="sc">$</span>sigma              <span class="co"># Residual standard error</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co"># Full coefficient table</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>task<span class="sc">$</span><span class="fu">get_model_stats</span>(<span class="at">event_id =</span> <span class="dv">1</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="fama-french-five-factor-model" class="section level1">
+<h1>Fama-French Five-Factor Model</h1>
+<p>The five-factor model (Fama &amp; French, 2015) adds profitability
+(RMW) and investment (CMA) factors:</p>
+<p><span class="math display">\[R_i - R_f = \alpha + \beta_m (R_m - R_f)
++ \beta_s \text{SMB} + \beta_h \text{HML} + \beta_r \text{RMW} + \beta_c
+\text{CMA} + \epsilon\]</span></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>task_ff5 <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl,</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                                <span class="at">factor_tbl =</span> factor_tbl)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>params_ff5 <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">return_calculation =</span> LogReturn<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">return_model       =</span> FamaFrench5FactorModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>task_ff5 <span class="ot">&lt;-</span> task_ff5 <span class="sc">|&gt;</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  <span class="fu">prepare_event_study</span>(params_ff5) <span class="sc">|&gt;</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  <span class="fu">fit_model</span>(params_ff5) <span class="sc">|&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="fu">calculate_statistics</span>(params_ff5)</span></code></pre></div>
+</div>
+<div id="carhart-four-factor-model" class="section level1">
+<h1>Carhart Four-Factor Model</h1>
+<p>The Carhart (1997) model adds a momentum factor (MOM) to the
+three-factor model:</p>
+<p><span class="math display">\[R_i - R_f = \alpha + \beta_m (R_m - R_f)
++ \beta_s \text{SMB} + \beta_h \text{HML} + \beta_{mom} \text{MOM} +
+\epsilon\]</span></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>task_c4 <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                               <span class="at">factor_tbl =</span> factor_tbl)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>params_c4 <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">return_calculation =</span> LogReturn<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">return_model       =</span> Carhart4FactorModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>task_c4 <span class="ot">&lt;-</span> task_c4 <span class="sc">|&gt;</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="fu">prepare_event_study</span>(params_c4) <span class="sc">|&gt;</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="fu">fit_model</span>(params_c4) <span class="sc">|&gt;</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="fu">calculate_statistics</span>(params_c4)</span></code></pre></div>
+</div>
+<div id="garch11-model" class="section level1">
+<h1>GARCH(1,1) Model</h1>
+<p>The GARCH model (Bollerslev, 1986) accounts for <strong>volatility
+clustering</strong>—the tendency of large returns to follow large
+returns. The mean equation includes the market return as a regressor
+(like the Market Model), but the variance is modeled as
+time-varying:</p>
+<p><span class="math display">\[R_{i,t} = \mu + \beta R_{m,t} +
+\epsilon_t, \quad \epsilon_t \sim N(0, \sigma_t^2)\]</span> <span class="math display">\[\sigma_t^2 = \omega + \alpha_1 \epsilon_{t-1}^2 +
+\beta_1 \sigma_{t-1}^2\]</span></p>
+<div id="requirements" class="section level2">
+<h2>Requirements</h2>
+<p>The GARCH model requires the <code>rugarch</code> package:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;rugarch&quot;</span>)</span></code></pre></div>
+</div>
+<div id="running-the-study-1" class="section level2">
+<h2>Running the Study</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>task_garch <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>params_garch <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">return_model =</span> GARCHModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>task_garch <span class="ot">&lt;-</span> task_garch <span class="sc">|&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="fu">prepare_event_study</span>(params_garch) <span class="sc">|&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="fu">fit_model</span>(params_garch) <span class="sc">|&gt;</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  <span class="fu">calculate_statistics</span>(params_garch)</span></code></pre></div>
+</div>
+<div id="garch-specific-results" class="section level2">
+<h2>GARCH-Specific Results</h2>
+<p>The GARCH model stores conditional volatility from the estimation
+window:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>stats <span class="ot">&lt;-</span> task_garch<span class="sc">$</span>data_tbl<span class="sc">$</span>model[[<span class="dv">1</span>]]<span class="sc">$</span>statistics</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>stats<span class="sc">$</span>alpha          <span class="co"># Mean equation intercept</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>stats<span class="sc">$</span>beta           <span class="co"># Market beta</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>stats<span class="sc">$</span>sigma          <span class="co"># Average conditional sigma</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>stats<span class="sc">$</span>garch_sigma    <span class="co"># Time series of conditional sigmas</span></span></code></pre></div>
+<p>The time-varying conditional sigma can be particularly useful for
+standardized test statistics, as it accounts for periods of high and low
+volatility in the estimation window.</p>
+</div>
+<div id="when-to-use-garch" class="section level2">
+<h2>When to Use GARCH</h2>
+<p>GARCH is most beneficial when:</p>
+<ul>
+<li>The estimation window spans periods of varying market conditions
+(calm and turbulent periods)</li>
+<li>The event itself may be associated with a volatility regime
+change</li>
+<li>You want to account for volatility clustering in the test
+statistics</li>
+</ul>
+<p>For short estimation windows in stable markets, the simple Market
+Model is often sufficient.</p>
+</div>
+</div>
+<div id="buy-and-hold-abnormal-returns-bhar" class="section level1">
+<h1>Buy-and-Hold Abnormal Returns (BHAR)</h1>
+<div id="motivation" class="section level2">
+<h2>Motivation</h2>
+<p>Standard CARs sum daily abnormal returns:</p>
+<p><span class="math display">\[CAR_i = \sum_{t=1}^{T}
+AR_{i,t}\]</span></p>
+<p>For <strong>long horizons</strong> (months or years), this introduces
+a compounding bias. BHAR instead compounds returns, which better
+reflects the actual investor experience:</p>
+<p><span class="math display">\[BHAR_i = \prod_{t=1}^{T} (1 + R_{i,t}) -
+\prod_{t=1}^{T} (1 + R_{m,t})\]</span></p>
+</div>
+<div id="running-a-bhar-study" class="section level2">
+<h2>Running a BHAR Study</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>task_bhar <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>params_bhar <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">return_model            =</span> BHARModel<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">single_event_statistics =</span> SingleEventStatisticsSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>    <span class="at">tests =</span> <span class="fu">list</span>(BHARTTest<span class="sc">$</span><span class="fu">new</span>())</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  )</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>task_bhar <span class="ot">&lt;-</span> task_bhar <span class="sc">|&gt;</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="fu">prepare_event_study</span>(params_bhar) <span class="sc">|&gt;</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  <span class="fu">fit_model</span>(params_bhar) <span class="sc">|&gt;</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  <span class="fu">calculate_statistics</span>(params_bhar)</span></code></pre></div>
+</div>
+<div id="interpreting-bhar-results" class="section level2">
+<h2>Interpreting BHAR Results</h2>
+<p>Unlike the Market Model where abnormal returns are computed per
+observation, BHAR computes <strong>running compounded</strong>
+differences. The abnormal return at each point represents the cumulative
+buy-and-hold difference up to that point:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Tidy output</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">tidy.EventStudyTask</span>(task_bhar, <span class="at">type =</span> <span class="st">&quot;ar&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co"># BHAR test statistic</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>task_bhar<span class="sc">$</span>data_tbl<span class="sc">$</span>BHART[[<span class="dv">1</span>]]</span></code></pre></div>
+</div>
+<div id="bhar-vs.-car-when-does-it-matter" class="section level2">
+<h2>BHAR vs. CAR: When Does It Matter?</h2>
+<p>The difference between BHAR and CAR grows with the horizon and the
+magnitude of returns:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Short window: CAR and BHAR are nearly identical</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>task_short <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>params_short <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(<span class="at">return_model =</span> MarketModel<span class="sc">$</span><span class="fu">new</span>())</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>task_short <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task_short)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>car_short  <span class="ot">&lt;-</span> <span class="fu">tidy.EventStudyTask</span>(task_short, <span class="at">type =</span> <span class="st">&quot;car&quot;</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>bhar_short <span class="ot">&lt;-</span> <span class="fu">tidy.EventStudyTask</span>(task_bhar, <span class="at">type =</span> <span class="st">&quot;ar&quot;</span>)</span></code></pre></div>
+<p>For a 21-day event window (typical), the difference is usually
+negligible. For horizons of 6–12 months or longer, BHAR is strongly
+preferred.</p>
+</div>
+</div>
+<div id="comparing-models" class="section level1">
+<h1>Comparing Models</h1>
+<p>A rigorous event study often compares results across multiple models
+to assess robustness:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="st">&quot;Market Model&quot;</span>     <span class="ot">=</span> MarketModel<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="st">&quot;FF3&quot;</span>              <span class="ot">=</span> FamaFrench3FactorModel<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="st">&quot;FF5&quot;</span>              <span class="ot">=</span> FamaFrench5FactorModel<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="st">&quot;Carhart&quot;</span>          <span class="ot">=</span> Carhart4FactorModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>)</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>results <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">imap_dfr</span>(models, <span class="cf">function</span>(model, name) {</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  t <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl,</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>                           <span class="at">factor_tbl =</span> factor_tbl)</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  p <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>    <span class="at">return_calculation =</span> LogReturn<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>    <span class="at">return_model       =</span> model</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  )</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  t <span class="ot">&lt;-</span> t <span class="sc">|&gt;</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>    <span class="fu">prepare_event_study</span>(p) <span class="sc">|&gt;</span></span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>    <span class="fu">fit_model</span>(p) <span class="sc">|&gt;</span></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>    <span class="fu">calculate_statistics</span>(p)</span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>  <span class="fu">tidy.EventStudyTask</span>(t, <span class="at">type =</span> <span class="st">&quot;car&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">model =</span> name)</span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>})</span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="co"># Plot CARs across models</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a><span class="fu">ggplot</span>(results, <span class="fu">aes</span>(<span class="at">x =</span> relative_index, <span class="at">y =</span> car, <span class="at">color =</span> model)) <span class="sc">+</span></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;grey40&quot;</span>) <span class="sc">+</span></span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">&quot;dotted&quot;</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;CAR Comparison Across Models&quot;</span>,</span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">&quot;Relative Time to Event&quot;</span>,</span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">&quot;Cumulative Abnormal Return&quot;</span>,</span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;Model&quot;</span></span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<p>If the main result holds across all models, you have strong evidence
+that it is not an artifact of the return model specification.</p>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<table>
+<colgroup>
+<col width="19%" />
+<col width="27%" />
+<col width="52%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Best for</th>
+<th>Extra data needed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Market Model</td>
+<td>Short horizons, standard studies</td>
+<td>None</td>
+</tr>
+<tr class="even">
+<td>FF3</td>
+<td>Controlling for size and value</td>
+<td><code>factor_tbl</code> with SMB, HML</td>
+</tr>
+<tr class="odd">
+<td>FF5</td>
+<td>Adding profitability and investment</td>
+<td><code>factor_tbl</code> with SMB, HML, RMW, CMA</td>
+</tr>
+<tr class="even">
+<td>Carhart</td>
+<td>Adding momentum exposure</td>
+<td><code>factor_tbl</code> with SMB, HML, MOM</td>
+</tr>
+<tr class="odd">
+<td>GARCH</td>
+<td>Volatile markets, heteroskedastic returns</td>
+<td>None (requires <code>rugarch</code>)</td>
+</tr>
+<tr class="even">
+<td>BHAR</td>
+<td>Long-horizon studies (6+ months)</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<ul>
+<li>Fama, E. F. &amp; French, K. R. (1993). Common risk factors in the
+returns on stocks and bonds. <em>Journal of Financial Economics</em>,
+33(1), 3–56.</li>
+<li>Fama, E. F. &amp; French, K. R. (2015). A five-factor asset pricing
+model. <em>Journal of Financial Economics</em>, 116(1), 1–22.</li>
+<li>Carhart, M. M. (1997). On persistence in mutual fund performance.
+<em>Journal of Finance</em>, 52(1), 57–82.</li>
+<li>Bollerslev, T. (1986). Generalized autoregressive conditional
+heteroskedasticity. <em>Journal of Econometrics</em>, 31(3),
+307–327.</li>
+<li>Barber, B. M. &amp; Lyon, J. D. (1997). Detecting long-run abnormal
+stock returns: The empirical power and specification of test statistics.
+<em>Journal of Financial Economics</em>, 43(3), 341–372.</li>
+<li>MacKinlay, A. C. (1997). Event Studies in Economics and Finance.
+<em>Journal of Economic Literature</em>, 35(1), 13–39.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

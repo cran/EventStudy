@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Simon Mueller" />
+
+<meta name="date" content="2026-10-09" />
+
+<title>Automated Event Study Reports</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Automated Event Study Reports</h1>
+<h4 class="author">Simon Mueller</h4>
+<h4 class="date">2026-10-09</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The EventStudy package can generate comprehensive HTML reports from a
+completed event study with a single function call. Reports include
+summary tables, diagnostic plots, test statistics, and optional
+cross-sectional regression results.</p>
+</div>
+<div id="requirements" class="section level1">
+<h1>Requirements</h1>
+<p>Report generation requires the <code>rmarkdown</code> and
+<code>knitr</code> packages:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;rmarkdown&quot;</span>, <span class="st">&quot;knitr&quot;</span>))</span></code></pre></div>
+</div>
+<div id="basic-usage" class="section level1">
+<h1>Basic Usage</h1>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># Run a complete event study</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>task <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_data, index_data, request)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>ps <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task, ps)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># Generate report</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">generate_report</span>(task, <span class="at">output_file =</span> <span class="st">&quot;my_report.html&quot;</span>)</span></code></pre></div>
+</div>
+<div id="customizing-the-report" class="section level1">
+<h1>Customizing the Report</h1>
+<div id="title-and-author" class="section level2">
+<h2>Title and Author</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">generate_report</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  task,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="st">&quot;report.html&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Earnings Announcement Event Study&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">author =</span> <span class="st">&quot;John Doe&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="selecting-sections" class="section level2">
+<h2>Selecting Sections</h2>
+<p>Choose which sections to include:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">generate_report</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  task,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="st">&quot;report.html&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">sections =</span> <span class="fu">c</span>(<span class="st">&quot;exec_summary&quot;</span>, <span class="st">&quot;data_methods&quot;</span>, <span class="st">&quot;diagnostics&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>               <span class="st">&quot;results&quot;</span>, <span class="st">&quot;robustness&quot;</span>, <span class="st">&quot;appendix&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>)</span></code></pre></div>
+<p>Available sections:</p>
+<table>
+<colgroup>
+<col width="40%" />
+<col width="59%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Section</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>exec_summary</code></td>
+<td>Study overview: model, event window, number of events</td>
+</tr>
+<tr class="even">
+<td><code>data_methods</code></td>
+<td>Data summary, model, and methodology description</td>
+</tr>
+<tr class="odd">
+<td><code>results</code></td>
+<td>Single- and multi-event AR/CAR/AAR/CAAR results (or panel event-time
+estimates for a <code>PanelEventStudyTask</code>)</td>
+</tr>
+<tr class="even">
+<td><code>diagnostics</code></td>
+<td>Model fit diagnostics (residual plots, normality tests)</td>
+</tr>
+<tr class="odd">
+<td><code>robustness</code></td>
+<td>Robustness notes and the joint-hypothesis caveat</td>
+</tr>
+<tr class="even">
+<td><code>references</code></td>
+<td>Knowledge-base references drawn from the diagnostics</td>
+</tr>
+<tr class="odd">
+<td><code>appendix</code></td>
+<td>Technical details and methodology</td>
+</tr>
+</tbody>
+</table>
+<p>Note: <code>exec_summary</code>, <code>data_methods</code>,
+<code>results</code>, <code>diagnostics</code>, <code>robustness</code>,
+and <code>references</code> are the six sections included by default;
+<code>appendix</code> is opt-in.</p>
+</div>
+<div id="summary-only" class="section level2">
+<h2>Summary Only</h2>
+<p>For a quick overview:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">generate_report</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  task,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="st">&quot;summary.html&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">sections =</span> <span class="fu">c</span>(<span class="st">&quot;exec_summary&quot;</span>, <span class="st">&quot;results&quot;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="including-cross-sectional-analysis" class="section level2">
+<h2>Including Cross-Sectional Analysis</h2>
+<p>If you have firm characteristics, include the cross-sectional
+regression:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Run cross-sectional regression first</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>cs_result <span class="ot">&lt;-</span> <span class="fu">cross_sectional_regression</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  task,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">formula =</span> <span class="sc">~</span> size <span class="sc">+</span> leverage,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">data =</span> firm_chars</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">generate_report</span>(</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  task,</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="st">&quot;report.html&quot;</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="at">sections =</span> <span class="fu">c</span>(<span class="st">&quot;exec_summary&quot;</span>, <span class="st">&quot;results&quot;</span>, <span class="st">&quot;diagnostics&quot;</span>),</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="at">cross_sectional =</span> cs_result</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="output-formats" class="section level1">
+<h1>Output Formats</h1>
+<p>Currently HTML is the primary format. PDF output requires a LaTeX
+installation:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">generate_report</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  task,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="st">&quot;report.pdf&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">format =</span> <span class="st">&quot;pdf&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="panel-event-study-reports" class="section level1">
+<h1>Panel Event Study Reports</h1>
+<p>The report function automatically detects
+<code>PanelEventStudyTask</code> and renders panel-specific
+sections:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>panel_task <span class="ot">&lt;-</span> PanelEventStudyTask<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">panel_data =</span> panel_data,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">unit_id =</span> <span class="st">&quot;unit_id&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">time_id =</span> <span class="st">&quot;time_id&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">outcome =</span> <span class="st">&quot;outcome&quot;</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">treatment =</span> <span class="st">&quot;treatment&quot;</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">treatment_time =</span> <span class="st">&quot;treatment_time&quot;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>panel_task <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(panel_task, <span class="at">method =</span> <span class="st">&quot;dynamic_twfe&quot;</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="fu">generate_report</span>(</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  panel_task,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="st">&quot;panel_report.html&quot;</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="at">sections =</span> <span class="fu">c</span>(<span class="st">&quot;exec_summary&quot;</span>, <span class="st">&quot;results&quot;</span>)</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>)</span></code></pre></div>
+<p><code>estimate_panel_event_study()</code> returns the (mutated)
+<code>PanelEventStudyTask</code> with results attached, not a separate
+results object – pass its return value on to
+<code>generate_report()</code>. Panel-specific content is rendered
+automatically inside the <code>results</code> section whenever
+<code>task</code> is a <code>PanelEventStudyTask</code>.</p>
+</div>
+<div id="programmatic-report-generation" class="section level1">
+<h1>Programmatic Report Generation</h1>
+<p>Generate reports in a loop for multiple configurations:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  MarketModel<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  MarketAdjustedModel<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  FamaFrench3FactorModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(models)) {</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  ps <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(<span class="at">return_model =</span> models[[i]])</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_data, index_data, request), ps)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>  <span class="fu">generate_report</span>(</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>    task,</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>    <span class="at">output_file =</span> <span class="fu">sprintf</span>(<span class="st">&quot;report_%s.html&quot;</span>, <span class="fu">class</span>(models[[i]])[<span class="dv">1</span>]),</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>    <span class="at">title =</span> <span class="fu">paste</span>(<span class="st">&quot;Event Study:&quot;</span>, <span class="fu">class</span>(models[[i]])[<span class="dv">1</span>])</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  )</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

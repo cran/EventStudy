@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Gallery</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Gallery</h1>
+
+
+
+<div class="es-stat-strip">
+  <div class="es-stat-badge">
+    <span class="stat-number">15+</span>
+    <span class="stat-label">Return Models</span>
+  </div>
+  <div class="es-stat-badge">
+    <span class="stat-number">12</span>
+    <span class="stat-label">Test Statistics</span>
+  </div>
+  <div class="es-stat-badge">
+    <span class="stat-number">5</span>
+    <span class="stat-label">DiD Estimators</span>
+  </div>
+</div>
+
+<div class="es-ecosystem-strip">
+  <span class="es-ecosystem-label">Part of the EventStudy ecosystem:</span>
+  <a href="https://eventstudy.de/products/gsheet-template" class="es-ecosystem-link">Google Sheets Template</a>
+  <span class="es-ecosystem-sep">.</span>
+  <a href="https://sipemu.github.io/eventstudy/" class="es-ecosystem-link es-ecosystem-current">R Package</a>
+  <span class="es-ecosystem-sep">.</span>
+  <a href="https://eventstudy.de/products/eventstudy-app" class="es-ecosystem-link">WebAssembly App</a>
+</div>
+
+<h2 class="es-section-heading es-core">Core Workflow</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="introduction.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Introducing EventStudy" src="../reference/figures/card-introduction.svg" alt="Introducing EventStudy"></div>
+  <div class="es-gallery-title">Introducing EventStudy</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-core">Core Workflow</span></div>
+</a>
+
+<a class="es-gallery-item" href="result-extraction.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Result Extraction &amp; Export" src="../reference/figures/card-result-extraction.svg" alt="Result Extraction &amp; Export"></div>
+  <div class="es-gallery-title">Result Extraction &amp; Export</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-core">Core Workflow</span></div>
+</a>
+
+<a class="es-gallery-item" href="diagnostics-validation.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Diagnostics &amp; Validation" src="../reference/figures/card-diagnostics-validation.svg" alt="Diagnostics &amp; Validation"></div>
+  <div class="es-gallery-title">Diagnostics &amp; Validation</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-core">Core Workflow</span></div>
+</a>
+
+<a class="es-gallery-item" href="inference-robustness.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Bootstrap Inference &amp; Multiple Testing" src="../reference/figures/card-inference-robustness.svg" alt="Bootstrap Inference &amp; Multiple Testing"></div>
+  <div class="es-gallery-title">Bootstrap Inference &amp; Multiple Testing</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-core">Core Workflow</span></div>
+</a>
+
+</div>
+
+<h2 class="es-section-heading es-models">Return Models</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="factor-models-bhar.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Factor Models, GARCH &amp; BHAR" src="../reference/figures/card-factor-models-bhar.svg" alt="Factor Models, GARCH &amp; BHAR"></div>
+  <div class="es-gallery-title">Factor Models, GARCH &amp; BHAR</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-models">Return Models</span></div>
+</a>
+
+<a class="es-gallery-item" href="time-varying-models.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Time-Varying Volatility Models" src="../reference/figures/card-time-varying-models.svg" alt="Time-Varying Volatility Models"></div>
+  <div class="es-gallery-title">Time-Varying Volatility Models</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-models">Return Models</span></div>
+</a>
+
+<a class="es-gallery-item" href="custom-models.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Custom Return Models" src="../reference/figures/card-custom-models.svg" alt="Custom Return Models"></div>
+  <div class="es-gallery-title">Custom Return Models</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-models">Return Models</span></div>
+</a>
+
+<a class="es-gallery-item" href="volume-volatility-event-study.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Volume &amp; Volatility Event Studies" src="../reference/figures/card-volume-volatility-event-study.svg" alt="Volume &amp; Volatility Event Studies"></div>
+  <div class="es-gallery-title">Volume &amp; Volatility Event Studies</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-models">Return Models</span></div>
+</a>
+
+</div>
+
+<h2 class="es-section-heading es-stats">Test Statistics</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="custom-test-statistics.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Custom Test Statistics" src="../reference/figures/card-custom-test-statistics.svg" alt="Custom Test Statistics"></div>
+  <div class="es-gallery-title">Custom Test Statistics</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-stats">Test Statistics</span></div>
+</a>
+
+</div>
+
+<h2 class="es-section-heading es-advanced">Advanced Designs</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="panel-event-study.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Panel DiD Event Studies" src="../reference/figures/card-panel-event-study.svg" alt="Panel DiD Event Studies"></div>
+  <div class="es-gallery-title">Panel DiD Event Studies</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-advanced">Advanced Designs</span></div>
+</a>
+
+<a class="es-gallery-item" href="modern-did-estimators.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Modern DiD Estimators" src="../reference/figures/card-modern-did-estimators.svg" alt="Modern DiD Estimators"></div>
+  <div class="es-gallery-title">Modern DiD Estimators</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-advanced">Advanced Designs</span></div>
+</a>
+
+<a class="es-gallery-item" href="intraday-event-study.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Intraday Event Studies" src="../reference/figures/card-intraday-event-study.svg" alt="Intraday Event Studies"></div>
+  <div class="es-gallery-title">Intraday Event Studies</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-advanced">Advanced Designs</span></div>
+</a>
+
+<a class="es-gallery-item" href="synthetic-control.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Synthetic Control" src="../reference/figures/card-synthetic-control.svg" alt="Synthetic Control"></div>
+  <div class="es-gallery-title">Synthetic Control</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-advanced">Advanced Designs</span></div>
+</a>
+
+</div>
+
+<h2 class="es-section-heading es-crosssec">Cross-Sectional &amp; Simulation</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="cross-sectional-analysis.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Cross-Sectional Analysis" src="../reference/figures/card-cross-sectional-analysis.svg" alt="Cross-Sectional Analysis"></div>
+  <div class="es-gallery-title">Cross-Sectional Analysis</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-crosssec">Cross-Sectional &amp; Simulation</span></div>
+</a>
+
+<a class="es-gallery-item" href="simulation-power-analysis.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Monte Carlo Power Analysis" src="../reference/figures/card-simulation-power-analysis.svg" alt="Monte Carlo Power Analysis"></div>
+  <div class="es-gallery-title">Monte Carlo Power Analysis</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-crosssec">Cross-Sectional &amp; Simulation</span></div>
+</a>
+
+</div>
+
+<h2 class="es-section-heading es-advisor">AI Advisor</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="ai-advisor.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Grounded AI Advisor" src="../reference/figures/card-ai-advisor.svg" alt="Grounded AI Advisor"></div>
+  <div class="es-gallery-title">Grounded AI Advisor</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-advisor">AI Advisor</span></div>
+</a>
+
+</div>
+
+<h2 class="es-section-heading es-data">Data &amp; Reporting</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="data-download.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Downloading Stock &amp; Factor Data" src="../reference/figures/card-data-download.svg" alt="Downloading Stock &amp; Factor Data"></div>
+  <div class="es-gallery-title">Downloading Stock &amp; Factor Data</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-data">Data &amp; Reporting</span></div>
+</a>
+
+<a class="es-gallery-item" href="automated-reports.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Automated Reporting" src="../reference/figures/card-automated-reports.svg" alt="Automated Reporting"></div>
+  <div class="es-gallery-title">Automated Reporting</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-data">Data &amp; Reporting</span></div>
+</a>
+
+</div>
+
+<h2 class="es-section-heading es-examples">Worked Examples</h2>
+
+<div class="es-gallery">
+
+<a class="es-gallery-item" href="https://sipemu.github.io/eventstudy/articles/example-earnings.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Earnings Surprise Analysis" src="../reference/figures/card-example-earnings.svg" alt="Earnings Surprise Analysis"></div>
+  <div class="es-gallery-title">Earnings Surprise Analysis</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-examples">Worked Examples</span></div>
+</a>
+
+<a class="es-gallery-item" href="https://sipemu.github.io/eventstudy/articles/example-regulatory.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="Regulatory Shock Analysis" src="../reference/figures/card-example-regulatory.svg" alt="Regulatory Shock Analysis"></div>
+  <div class="es-gallery-title">Regulatory Shock Analysis</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-examples">Worked Examples</span></div>
+</a>
+
+<a class="es-gallery-item" href="https://sipemu.github.io/eventstudy/articles/example-ma.html">
+  <div class="es-gallery-thumb"><img role="img" aria-label="M&amp;A Deal Announcements" src="../reference/figures/card-example-ma.svg" alt="M&amp;A Deal Announcements"></div>
+  <div class="es-gallery-title">M&amp;A Deal Announcements</div>
+  <div class="es-gallery-tags"><span class="es-tag es-tag-examples">Worked Examples</span></div>
+</a>
+
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

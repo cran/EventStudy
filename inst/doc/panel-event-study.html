@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Simon Mueller" />
+
+<meta name="date" content="2026-10-09" />
+
+<title>Panel Event Studies: A Guide Following Miller (2023)</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Panel Event Studies: A Guide Following
+Miller (2023)</h1>
+<h4 class="author">Simon Mueller</h4>
+<h4 class="date">2026-10-09</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Panel event studies—also known as difference-in-differences (DiD)
+event studies—are among the most widely used research designs in applied
+economics, public policy, and health research. When units (firms,
+states, individuals) receive a treatment at known times and are observed
+over multiple periods, the panel event study framework lets us estimate
+treatment effects while controlling for both time-invariant unit
+characteristics and common time shocks.</p>
+<p>This vignette follows the practical guide laid out in <strong>Miller
+(2023), “An Introductory Guide to Event Study Models,”</strong>
+<em>Journal of Economic Perspectives</em>, 37(2), 203–230. Miller’s
+paper provides a unified framework covering data structure, the
+estimating equation, reference-period normalization, endpoint binning,
+heterogeneous treatment effects with staggered adoption, pre-trend
+testing, and inference. We map each concept to the EventStudy package’s
+panel module.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
+</div>
+<div id="data-structure-miller-section-i" class="section level1">
+<h1>Data Structure (Miller Section I)</h1>
+<p>Miller classifies panel event study settings along two
+dimensions:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Single vs. staggered event dates</strong> — Do all treated
+units receive treatment in the same period, or do different cohorts
+adopt at different times?</li>
+<li><strong>Never-treated units present or not</strong> — Is there a set
+of units that remain untreated throughout the sample?</li>
+</ol>
+<p>These distinctions matter because staggered adoption, combined with
+heterogeneous treatment effects, can bias conventional two-way fixed
+effects (TWFE) estimators—a point we return to in Section 8.</p>
+<div id="dataset-a-single-cohort-design" class="section level2">
+<h2>Dataset A: Single-Cohort Design</h2>
+<p>Thirty units observed over 20 periods. Fifteen units are treated at
+period 10; fifteen are never treated.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>n_units <span class="ot">&lt;-</span> <span class="dv">30</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>n_periods <span class="ot">&lt;-</span> <span class="dv">20</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>treat_period <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>true_effect <span class="ot">&lt;-</span> <span class="fl">2.0</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>dataset_a <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">unit_id =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>n_units, <span class="at">each =</span> n_periods),</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">time_id =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>n_periods, n_units)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>    <span class="co"># First 15 units are treated at period 10</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>    <span class="at">treatment_time =</span> <span class="fu">ifelse</span>(unit_id <span class="sc">&lt;=</span> <span class="dv">15</span>, treat_period, <span class="cn">NA_integer_</span>),</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>    <span class="at">treated =</span> <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(treatment_time) <span class="sc">&amp;</span> time_id <span class="sc">&gt;=</span> treatment_time, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>    <span class="co"># Unit and time fixed effects + treatment effect + noise</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>    <span class="at">unit_fe =</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(n_units, <span class="dv">0</span>, <span class="dv">1</span>), <span class="at">each =</span> n_periods),</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>    <span class="at">time_fe =</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(n_periods, <span class="dv">0</span>, <span class="fl">0.5</span>), n_units),</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>    <span class="at">outcome =</span> unit_fe <span class="sc">+</span> time_fe <span class="sc">+</span> true_effect <span class="sc">*</span> treated <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="fu">n</span>() , <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  )</span></code></pre></div>
+</div>
+<div id="dataset-b-staggered-multi-cohort-design" class="section level2">
+<h2>Dataset B: Staggered Multi-Cohort Design</h2>
+<p>Fifty units over 20 periods. Three treatment cohorts adopt at periods
+8, 12, and 16; a fourth group is never treated.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>n_units_b <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>n_periods_b <span class="ot">&lt;-</span> <span class="dv">20</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>dataset_b <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">unit_id =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>n_units_b, <span class="at">each =</span> n_periods_b),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">time_id =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>n_periods_b, n_units_b)</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>    <span class="co"># Assign cohorts: units 1-12 at t=8, 13-25 at t=12, 26-37 at t=16, rest never</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>    <span class="at">treatment_time =</span> <span class="fu">case_when</span>(</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>      unit_id <span class="sc">&lt;=</span> <span class="dv">12</span>             <span class="sc">~</span> <span class="dv">8</span><span class="dt">L</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>      unit_id <span class="sc">&gt;</span> <span class="dv">12</span> <span class="sc">&amp;</span> unit_id <span class="sc">&lt;=</span> <span class="dv">25</span> <span class="sc">~</span> <span class="dv">12</span><span class="dt">L</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>      unit_id <span class="sc">&gt;</span> <span class="dv">25</span> <span class="sc">&amp;</span> unit_id <span class="sc">&lt;=</span> <span class="dv">37</span> <span class="sc">~</span> <span class="dv">16</span><span class="dt">L</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>      <span class="cn">TRUE</span>                      <span class="sc">~</span> <span class="cn">NA_integer_</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>    ),</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>    <span class="at">treated =</span> <span class="fu">ifelse</span>(<span class="sc">!</span><span class="fu">is.na</span>(treatment_time) <span class="sc">&amp;</span> time_id <span class="sc">&gt;=</span> treatment_time, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>    <span class="co"># Heterogeneous effects: early adopters have larger effects</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>    <span class="at">true_te =</span> <span class="fu">case_when</span>(</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>      treatment_time <span class="sc">==</span> <span class="dv">8</span>  <span class="sc">~</span> <span class="fl">3.0</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>      treatment_time <span class="sc">==</span> <span class="dv">12</span> <span class="sc">~</span> <span class="fl">2.0</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>      treatment_time <span class="sc">==</span> <span class="dv">16</span> <span class="sc">~</span> <span class="fl">1.0</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>      <span class="cn">TRUE</span>                 <span class="sc">~</span> <span class="dv">0</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>    ),</span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>    <span class="at">unit_fe =</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(n_units_b, <span class="dv">0</span>, <span class="dv">1</span>), <span class="at">each =</span> n_periods_b),</span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>    <span class="at">time_fe =</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(n_periods_b, <span class="dv">0</span>, <span class="fl">0.5</span>), n_units_b),</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    <span class="at">outcome =</span> unit_fe <span class="sc">+</span> time_fe <span class="sc">+</span> true_te <span class="sc">*</span> treated <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="fu">n</span>(), <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>  )</span></code></pre></div>
+</div>
+<div id="creating-tasks" class="section level2">
+<h2>Creating Tasks</h2>
+<p>Each dataset is wrapped in a <code>PanelEventStudyTask</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>task_a <span class="ot">&lt;-</span> PanelEventStudyTask<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  dataset_a,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">unit_id        =</span> <span class="st">&quot;unit_id&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">time_id        =</span> <span class="st">&quot;time_id&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">outcome        =</span> <span class="st">&quot;outcome&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">treatment      =</span> <span class="st">&quot;treated&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">treatment_time =</span> <span class="st">&quot;treatment_time&quot;</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>task_a</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; PanelEventStudyTask</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;   Units:    30</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;   Periods:  20</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;   Treated:  1 cohort(s)</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   Outcome:  outcome</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt;   Estimated: FALSE</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>task_b <span class="ot">&lt;-</span> PanelEventStudyTask<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  dataset_b,</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  <span class="at">unit_id        =</span> <span class="st">&quot;unit_id&quot;</span>,</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">time_id        =</span> <span class="st">&quot;time_id&quot;</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  <span class="at">outcome        =</span> <span class="st">&quot;outcome&quot;</span>,</span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>  <span class="at">treatment      =</span> <span class="st">&quot;treated&quot;</span>,</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>  <span class="at">treatment_time =</span> <span class="st">&quot;treatment_time&quot;</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="the-estimating-equation-miller-section-ii" class="section level1">
+<h1>The Estimating Equation (Miller Section II)</h1>
+<p>Miller presents a general dynamic specification for panel event
+studies:</p>
+<p><span class="math display">\[Y_{it} = \alpha_i + \gamma_t + \sum_{j
+\neq j^*} \delta_j \cdot D_{it}^j + \varepsilon_{it}\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(\alpha_i\)</span> are <strong>unit fixed
+effects</strong>, absorbing time-invariant differences across
+units;</li>
+<li><span class="math inline">\(\gamma_t\)</span> are <strong>time fixed
+effects</strong>, absorbing common shocks that affect all units in a
+given period;</li>
+<li><span class="math inline">\(D_{it}^j\)</span> is an
+<strong>event-time indicator</strong> equal to 1 when unit <span class="math inline">\(i\)</span> is exactly <span class="math inline">\(j\)</span> periods from its treatment date at time
+<span class="math inline">\(t\)</span>;</li>
+<li><span class="math inline">\(j^*\)</span> is the <strong>omitted
+reference period</strong> (normalized to zero); and</li>
+<li><span class="math inline">\(\delta_j\)</span> is the treatment
+effect at event time <span class="math inline">\(j\)</span>, measured
+relative to the reference period.</li>
+</ul>
+<p>The EventStudy package implements this equation in
+<code>estimate_panel_event_study()</code>. The <code>method</code>
+argument selects the variant, while <code>leads</code>,
+<code>lags</code>, and <code>base_period</code> control the event-time
+window and normalization.</p>
+</div>
+<div id="static-twfe-the-single-coefficient-model-miller-section-ii.a" class="section level1">
+<h1>Static TWFE: The Single-Coefficient Model (Miller Section II.A)</h1>
+<p>The simplest panel event study specification restricts all
+post-treatment effects to a single coefficient <span class="math inline">\(\beta\)</span>:</p>
+<p><span class="math display">\[Y_{it} = \alpha_i + \gamma_t + \beta
+\cdot D_{it} + \varepsilon_{it}\]</span></p>
+<p>Here <span class="math inline">\(D_{it} = 1\)</span> if unit <span class="math inline">\(i\)</span> has been treated by time <span class="math inline">\(t\)</span> (post-treatment), and 0 otherwise. The
+coefficient <span class="math inline">\(\beta\)</span> is the
+<strong>average treatment effect on the treated (ATT)</strong> under the
+assumption that the treatment effect is constant across all
+post-treatment periods and cohorts.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>task_a <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(task_a, <span class="at">method =</span> <span class="st">&quot;static_twfe&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>task_a<span class="sc">$</span>results<span class="sc">$</span>coefficients</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;   term  estimate std.error statistic  p.value</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   ATT   2.01     0.15      13.4      &lt;0.001</span></span></code></pre></div>
+<p>The static model is a good starting point, but it assumes homogeneous
+effects. If the treatment effect varies over time (e.g., growing or
+fading), this assumption can be misleading. The dynamic specification
+relaxes it.</p>
+</div>
+<div id="dynamic-twfe-event-time-coefficients-miller-section-ii.b" class="section level1">
+<h1>Dynamic TWFE: Event-Time Coefficients (Miller Section II.B)</h1>
+<p>The dynamic specification estimates a separate coefficient <span class="math inline">\(\delta_j\)</span> for each event-time period,
+allowing us to trace out the treatment effect path:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>task_a <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  task_a,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">method      =</span> <span class="st">&quot;dynamic_twfe&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">leads       =</span> <span class="dv">5</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">lags        =</span> <span class="dv">5</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">base_period =</span> <span class="sc">-</span><span class="dv">1</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>task_a<span class="sc">$</span>results<span class="sc">$</span>coefficients</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;   relative_time estimate std.error statistic p.value</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;              -5    0.02     0.30      0.07    0.95</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;              -4   -0.10     0.28     -0.36    0.72</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;              ...</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;              -1    0.00     0.00        NA      NA</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;               0    1.95     0.22      8.86   &lt;0.001</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;               1    2.03     0.23      8.83   &lt;0.001</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt;              ...</span></span></code></pre></div>
+<p>The pre-treatment coefficients (<span class="math inline">\(j &lt;
+0\)</span>) should be close to zero under the parallel trends
+assumption, while the post-treatment coefficients (<span class="math inline">\(j \geq 0\)</span>) capture the treatment effect
+dynamics.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">plot_panel_event_study</span>(task_a, <span class="at">title =</span> <span class="st">&quot;Dynamic TWFE - Single Cohort&quot;</span>)</span></code></pre></div>
+<p>The plot shows point estimates and confidence intervals at each event
+time, with a vertical dashed line separating the pre- and post-treatment
+periods.</p>
+</div>
+<div id="reference-period-and-normalization-miller-section-iii" class="section level1">
+<h1>Reference Period and Normalization (Miller Section III)</h1>
+<p>One event-time indicator must be omitted to avoid perfect
+collinearity with the unit and time fixed effects. This is the
+<strong>reference period</strong> <span class="math inline">\(j^*\)</span>, and all coefficients <span class="math inline">\(\delta_j\)</span> are interpreted relative to
+it.</p>
+<p>Miller emphasizes that the choice of reference period is not merely a
+mechanical necessity—it has <strong>substantive implications</strong>.
+The default <code>base_period = -1</code> normalizes to the period
+immediately before treatment, so that <span class="math inline">\(\delta_0\)</span> captures the immediate treatment
+effect. Alternative choices include:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Normalize to two periods before treatment</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>task_a <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  task_a,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">method      =</span> <span class="st">&quot;dynamic_twfe&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">leads       =</span> <span class="dv">5</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">lags        =</span> <span class="dv">5</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">base_period =</span> <span class="sc">-</span><span class="dv">2</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>)</span></code></pre></div>
+<p>With <code>base_period = -2</code>, the coefficient at <span class="math inline">\(j = -1\)</span> becomes interpretable as a test
+for anticipation effects: if units begin reacting before treatment, this
+coefficient will be non-zero.</p>
+<p>Miller also discusses <strong>extended reference periods</strong>
+where multiple pre-treatment periods are pooled as the reference group.
+While the package normalizes a single period, you can approximate this
+by checking that all pre-treatment coefficients are jointly close to
+zero (see Section 9 on pre-trend testing).</p>
+</div>
+<div id="endpoint-binning-miller-section-iv" class="section level1">
+<h1>Endpoint Binning (Miller Section IV)</h1>
+<p>In practice, event time extends beyond the window we estimate. Miller
+discusses <strong>endpoint binning</strong>: grouping all event times
+below <span class="math inline">\(-K\)</span> (or above <span class="math inline">\(K\)</span>) into a single bin. This prevents
+observations far from the treatment date from being dropped and captures
+the cumulative effect of treatment at long horizons.</p>
+<p>The package automatically bins at the
+<code>leads</code>/<code>lags</code> boundaries. The coefficient at
+relative time <span class="math inline">\(-\text{leads}\)</span>
+captures the average effect for all event times <span class="math inline">\(\leq -\text{leads}\)</span>, and similarly for
+<span class="math inline">\(+\text{lags}\)</span>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Narrow window: leads = 3, lags = 3</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>task_a_narrow <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  task_a,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;dynamic_twfe&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">leads  =</span> <span class="dv">3</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">lags   =</span> <span class="dv">3</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>task_a_narrow<span class="sc">$</span>results<span class="sc">$</span>coefficients</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co"># Wider window: leads = 8, lags = 8</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>task_a_wide <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>  task_a,</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;dynamic_twfe&quot;</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  <span class="at">leads  =</span> <span class="dv">8</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  <span class="at">lags   =</span> <span class="dv">8</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>)</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>task_a_wide<span class="sc">$</span>results<span class="sc">$</span>coefficients</span></code></pre></div>
+<p>With the narrow window, the endpoint bins absorb more observations,
+and the binned coefficients may differ from the interior ones. With a
+wider window, each coefficient captures a more specific event time but
+with potentially fewer observations.</p>
+<p>Miller recommends reporting results for multiple window widths as a
+robustness check, and being transparent about which observations are
+binned at the endpoints.</p>
+</div>
+<div id="staggered-treatment-and-heterogeneous-effects-miller-section-v" class="section level1">
+<h1>Staggered Treatment and Heterogeneous Effects (Miller Section
+V)</h1>
+<div id="the-twfe-problem" class="section level2">
+<h2>The TWFE Problem</h2>
+<p>When treatment is staggered and treatment effects are heterogeneous
+across cohorts or over time, the standard TWFE estimator can produce
+misleading results. The core issue is that TWFE uses
+<strong>all</strong> untreated and <strong>already-treated</strong>
+units as comparisons. When already-treated units serve as controls for
+newly-treated units—what Miller calls “forbidden comparisons”— the
+resulting weights on cohort-specific treatment effects can be
+<strong>negative</strong>.</p>
+<p>This means the TWFE estimate can be an inconsistent estimate of the
+ATT, potentially even with the wrong sign, when:</p>
+<ol style="list-style-type: decimal">
+<li>Treatment is staggered (different cohorts adopt at different times),
+<strong>and</strong></li>
+<li>Treatment effects are heterogeneous (differ by cohort or evolve over
+time).</li>
+</ol>
+</div>
+<div id="sun-abraham-2021-interaction-weighted-estimator" class="section level2">
+<h2>Sun &amp; Abraham (2021) Interaction-Weighted Estimator</h2>
+<p>Sun &amp; Abraham (2021) propose an <strong>interaction-weighted
+(IW)</strong> estimator that avoids forbidden comparisons. The idea is
+to estimate cohort-specific effects by interacting event-time indicators
+with cohort indicators, then aggregate using cohort-size weights.</p>
+<p>The EventStudy package implements this as
+<code>method = &quot;sun_abraham&quot;</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>task_b <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  task_b,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;sun_abraham&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">leads  =</span> <span class="dv">5</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">lags   =</span> <span class="dv">5</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>task_b<span class="sc">$</span>results<span class="sc">$</span>coefficients</span></code></pre></div>
+</div>
+<div id="comparing-twfe-and-sun-abraham" class="section level2">
+<h2>Comparing TWFE and Sun &amp; Abraham</h2>
+<p>To see the difference, we can estimate both on the staggered dataset
+and compare:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># TWFE on staggered data (potentially biased)</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>task_b_twfe <span class="ot">&lt;-</span> PanelEventStudyTask<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  dataset_b,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">unit_id =</span> <span class="st">&quot;unit_id&quot;</span>, <span class="at">time_id =</span> <span class="st">&quot;time_id&quot;</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">outcome =</span> <span class="st">&quot;outcome&quot;</span>, <span class="at">treatment =</span> <span class="st">&quot;treated&quot;</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">treatment_time =</span> <span class="st">&quot;treatment_time&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>)</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>task_b_twfe <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  task_b_twfe,</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;dynamic_twfe&quot;</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>  <span class="at">leads =</span> <span class="dv">5</span>, <span class="at">lags =</span> <span class="dv">5</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>)</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co"># Sun &amp; Abraham on the same data</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>task_b_sa <span class="ot">&lt;-</span> PanelEventStudyTask<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>  dataset_b,</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  <span class="at">unit_id =</span> <span class="st">&quot;unit_id&quot;</span>, <span class="at">time_id =</span> <span class="st">&quot;time_id&quot;</span>,</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  <span class="at">outcome =</span> <span class="st">&quot;outcome&quot;</span>, <span class="at">treatment =</span> <span class="st">&quot;treated&quot;</span>,</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>  <span class="at">treatment_time =</span> <span class="st">&quot;treatment_time&quot;</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>)</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>task_b_sa <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>  task_b_sa,</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;sun_abraham&quot;</span>,</span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>  <span class="at">leads =</span> <span class="dv">5</span>, <span class="at">lags =</span> <span class="dv">5</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>)</span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co"># Side-by-side comparison</span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a>coefs_comparison <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>  task_b_twfe<span class="sc">$</span>results<span class="sc">$</span>coefficients <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">method =</span> <span class="st">&quot;Dynamic TWFE&quot;</span>),</span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>  task_b_sa<span class="sc">$</span>results<span class="sc">$</span>coefficients   <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">method =</span> <span class="st">&quot;Sun &amp; Abraham&quot;</span>)</span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a>)</span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="fu">ggplot</span>(coefs_comparison, <span class="fu">aes</span>(<span class="at">x =</span> relative_time, <span class="at">y =</span> estimate, <span class="at">color =</span> method)) <span class="sc">+</span></span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;grey40&quot;</span>) <span class="sc">+</span></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">linetype =</span> <span class="st">&quot;dotted&quot;</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.3</span>), <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.3</span>), <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;TWFE vs Sun &amp; Abraham: Staggered Adoption&quot;</span>,</span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">&quot;Relative Time to Treatment&quot;</span>,</span>
+<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">&quot;Estimate&quot;</span>,</span>
+<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;Method&quot;</span></span>
+<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<p>When treatment effects are homogeneous, the two estimators will
+agree. When effects are heterogeneous—as in Dataset B where early
+adopters have larger effects—the Sun &amp; Abraham estimates correctly
+recover the cohort-weighted ATT, while TWFE may be attenuated or
+distorted.</p>
+</div>
+</div>
+<div id="pre-trend-testing-miller-section-vi" class="section level1">
+<h1>Pre-trend Testing (Miller Section VI)</h1>
+<p>The validity of the panel event study hinges on the <strong>parallel
+trends assumption</strong>: in the absence of treatment, treated and
+control units would have followed the same outcome trajectory. While
+this assumption is fundamentally untestable, we can look for indirect
+evidence.</p>
+<div id="visual-inspection" class="section level2">
+<h2>Visual Inspection</h2>
+<p>The pre-treatment coefficients <span class="math inline">\(\delta_j\)</span> for <span class="math inline">\(j &lt; 0\)</span> should be close to zero. The
+event study plot provides a visual check—if the pre-treatment
+coefficients trend systematically away from zero, the parallel trends
+assumption is suspect.</p>
+</div>
+<div id="joint-test-for-pre-trends" class="section level2">
+<h2>Joint Test for Pre-trends</h2>
+<p>A more formal approach is a joint F-test of the null hypothesis that
+all pre-treatment coefficients equal zero:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>coefs <span class="ot">&lt;-</span> task_a<span class="sc">$</span>results<span class="sc">$</span>coefficients</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>pre_treatment <span class="ot">&lt;-</span> coefs <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="fu">filter</span>(relative_time <span class="sc">&lt;</span> <span class="dv">0</span>, relative_time <span class="sc">!=</span> <span class="sc">-</span><span class="dv">1</span>)  <span class="co"># exclude base period</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(pre_treatment) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  f_stat <span class="ot">&lt;-</span> <span class="fu">sum</span>(pre_treatment<span class="sc">$</span>estimate<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> pre_treatment<span class="sc">$</span>std.error<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>    <span class="fu">nrow</span>(pre_treatment)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  p_value <span class="ot">&lt;-</span> <span class="fu">pf</span>(f_stat, <span class="at">df1 =</span> <span class="fu">nrow</span>(pre_treatment),</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>                <span class="at">df2 =</span> task_a<span class="sc">$</span>results<span class="sc">$</span>model<span class="sc">$</span>df.residual,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>                <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Joint pre-trend F-stat:&quot;</span>, <span class="fu">round</span>(f_stat, <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;p-value:               &quot;</span>, <span class="fu">round</span>(p_value, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="millers-caution" class="section level2">
+<h2>Miller’s Caution</h2>
+<p>Miller warns that <strong>absence of evidence is not evidence of
+absence</strong>. A non-significant pre-trend test does not prove
+parallel trends—it may simply reflect low statistical power. Conversely,
+small but statistically significant pre-treatment coefficients may be
+substantively unimportant. Researchers should:</p>
+<ol style="list-style-type: decimal">
+<li>Report the pre-treatment coefficients and their confidence
+intervals.</li>
+<li>Contextualize the magnitude of any pre-trends relative to the
+estimated treatment effects.</li>
+<li>Consider sensitivity analyses (e.g., Rambachan &amp; Roth, 2023) for
+how violations of parallel trends would affect the conclusions.</li>
+</ol>
+</div>
+</div>
+<div id="reporting-and-counterfactuals-miller-section-vii" class="section level1">
+<h1>Reporting and Counterfactuals (Miller Section VII)</h1>
+<p>Miller recommends reporting not just the treatment effect estimates,
+but also the <strong>counterfactual outcomes</strong>—what the treated
+units’ outcomes would have been absent treatment. This helps readers
+assess both the magnitude and plausibility of the estimates.</p>
+<p>From the dynamic model, the counterfactual for a treated unit at
+event time <span class="math inline">\(j\)</span> is the observed
+outcome minus the estimated effect:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Construct counterfactual for treated units</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>coef_lookup <span class="ot">&lt;-</span> task_a<span class="sc">$</span>results<span class="sc">$</span>coefficients <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="fu">select</span>(relative_time, estimate) <span class="sc">%&gt;%</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="fu">deframe</span>()</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>counterfactual <span class="ot">&lt;-</span> dataset_a <span class="sc">%&gt;%</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(treatment_time)) <span class="sc">%&gt;%</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>    <span class="at">rel_time =</span> time_id <span class="sc">-</span> treatment_time,</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>    <span class="at">delta_hat =</span> coef_lookup[<span class="fu">as.character</span>(rel_time)],</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>    <span class="at">delta_hat =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(delta_hat), <span class="dv">0</span>, delta_hat),</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>    <span class="at">outcome_counterfactual =</span> outcome <span class="sc">-</span> delta_hat</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  )</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co"># Plot observed vs counterfactual</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>counterfactual_summary <span class="ot">&lt;-</span> counterfactual <span class="sc">%&gt;%</span></span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>  <span class="fu">group_by</span>(time_id) <span class="sc">%&gt;%</span></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>    <span class="at">observed       =</span> <span class="fu">mean</span>(outcome),</span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>    <span class="at">counterfactual =</span> <span class="fu">mean</span>(outcome_counterfactual),</span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span></span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>  )</span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="fu">ggplot</span>(counterfactual_summary, <span class="fu">aes</span>(<span class="at">x =</span> time_id)) <span class="sc">+</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> observed, <span class="at">color =</span> <span class="st">&quot;Observed&quot;</span>), <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> counterfactual, <span class="at">color =</span> <span class="st">&quot;Counterfactual&quot;</span>),</span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>            <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">10</span>, <span class="at">linetype =</span> <span class="st">&quot;dotted&quot;</span>, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>) <span class="sc">+</span></span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Observed vs Counterfactual Outcomes (Treated Units)&quot;</span>,</span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>    <span class="at">x     =</span> <span class="st">&quot;Time Period&quot;</span>,</span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>    <span class="at">y     =</span> <span class="st">&quot;Mean Outcome&quot;</span>,</span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>    <span class="at">color =</span> <span class="cn">NULL</span></span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<p>The gap between the observed and counterfactual lines after the
+treatment date visualizes the estimated treatment effect.</p>
+</div>
+<div id="statistical-inference-miller-section-viii" class="section level1">
+<h1>Statistical Inference (Miller Section VIII)</h1>
+<div id="clustered-standard-errors" class="section level2">
+<h2>Clustered Standard Errors</h2>
+<p>Panel event studies typically require clustering standard errors at
+the unit level to account for serial correlation within units. When the
+<code>sandwich</code> package is installed,
+<code>estimate_panel_event_study()</code> <strong>automatically computes
+cluster-robust standard errors</strong> via
+<code>sandwich::vcovCL()</code>. The <code>cluster</code> parameter
+controls the clustering variable and defaults to the unit ID:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Cluster-robust SEs at the unit level (the default)</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>task_a <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  task_a,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">method  =</span> <span class="st">&quot;dynamic_twfe&quot;</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">leads   =</span> <span class="dv">5</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="at">lags    =</span> <span class="dv">5</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  <span class="at">cluster =</span> <span class="st">&quot;unit_id&quot;</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>)</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co"># Cluster at a different level (e.g., state)</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>task_a <span class="ot">&lt;-</span> <span class="fu">estimate_panel_event_study</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>  task_a,</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>  <span class="at">method  =</span> <span class="st">&quot;dynamic_twfe&quot;</span>,</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  <span class="at">leads   =</span> <span class="dv">5</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>  <span class="at">lags    =</span> <span class="dv">5</span>,</span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>  <span class="at">cluster =</span> <span class="st">&quot;state_id&quot;</span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>)</span></code></pre></div>
+<p>If <code>sandwich</code> is not installed, the function falls back to
+OLS standard errors with an informative message. Install it with
+<code>install.packages(&quot;sandwich&quot;)</code>.</p>
+</div>
+<div id="how-many-clusters-are-enough" class="section level2">
+<h2>How Many Clusters Are Enough?</h2>
+<p>Miller discusses the well-known problem that clustered standard
+errors are unreliable when the number of clusters is small. His rule of
+thumb, drawing on the simulation evidence in the literature: <strong>you
+need approximately 42–50 or more clusters</strong> for cluster-robust
+inference to be reliable.</p>
+<p>When the number of clusters is small, alternatives include:</p>
+<ul>
+<li><strong>Wild cluster bootstrap</strong> (Cameron, Gelbach, &amp;
+Miller, 2008) — available via the <code>fwildclusterboot</code>
+package</li>
+<li><strong>Randomization inference</strong> (Fisher, 1935)</li>
+</ul>
+</div>
+</div>
+<div id="practical-checklist" class="section level1">
+<h1>Practical Checklist</h1>
+<p>Drawing on Miller (2023), here is a checklist for panel event study
+research:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Classify your setting.</strong> Single cohort or staggered?
+Never-treated controls available?</li>
+<li><strong>Start with the dynamic specification.</strong> Plot the
+event-time coefficients before collapsing to a static estimate.</li>
+<li><strong>Inspect pre-trends.</strong> Report pre-treatment
+coefficients visually and with a joint test.</li>
+<li><strong>Choose the reference period deliberately.</strong>
+<code>base_period = -1</code> is standard; consider whether anticipation
+effects warrant an earlier reference.</li>
+<li><strong>Report endpoint binning.</strong> Be transparent about which
+event times are binned and test sensitivity to different window
+widths.</li>
+<li><strong>Use appropriate estimators for staggered designs.</strong>
+If treatment timing varies and effects may be heterogeneous, use Sun
+&amp; Abraham or similar heterogeneity-robust estimators instead of
+TWFE.</li>
+<li><strong>Report counterfactual outcomes.</strong> Show what would
+have happened absent treatment.</li>
+<li><strong>Cluster standard errors appropriately.</strong> Cluster at
+the unit level and ensure you have enough clusters (42–50+) for reliable
+inference.</li>
+<li><strong>Test robustness.</strong> Vary the window width, reference
+period, and estimator. Report results for multiple specifications.</li>
+</ol>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<ul>
+<li><p><strong>Miller, D. L. (2023).</strong> An Introductory Guide to
+Event Study Models. <em>Journal of Economic Perspectives</em>, 37(2),
+203–230. <a href="https://doi.org/10.1257/jep.37.2.203">doi:10.1257/jep.37.2.203</a></p></li>
+<li><p><strong>Sun, L., &amp; Abraham, S. (2021).</strong> Estimating
+Dynamic Treatment Effects in Event Studies with Heterogeneous Treatment
+Effects. <em>Journal of Econometrics</em>, 225(2), 175–199. <a href="https://doi.org/10.1016/j.jeconom.2020.09.006">doi:10.1016/j.jeconom.2020.09.006</a></p></li>
+<li><p><strong>MacKinlay, A. C. (1997).</strong> Event Studies in
+Economics and Finance. <em>Journal of Economic Literature</em>, 35(1),
+13–39.</p></li>
+<li><p><strong>Cameron, A. C., Gelbach, J. B., &amp; Miller, D. L.
+(2008).</strong> Bootstrap-Based Improvements for Inference with
+Clustered Errors. <em>Review of Economics and Statistics</em>, 90(3),
+414–427.</p></li>
+<li><p><strong>Rambachan, A., &amp; Roth, J. (2023).</strong> A More
+Credible Approach to Parallel Trends. <em>Review of Economic
+Studies</em>, 90(5), 2555–2591.</p></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,897 @@
+#' Cross-Sectional T Test (CSectTTest)
+#'
+#' The Cross-Sectional Test (CSect T) is a statistical tool employed in event
+#' studies to evaluate the null hypothesis that the average abnormal return at
+#' the event date is zero. The test statistic is distributed as \eqn{t_{N-1}}, where
+#' N is the number of events in that group.
+#'
+#' See also \url{https://eventstudy.de/statistics/aar_caar_statistics.html}
+#'
+#' @family eventstudy-statistics
+#' @export
+CSectTTest <- R6Class("CSectTTest",
+                   inherit = TestStatisticBase,
+                   public = list(
+                     #' @field name Short code of the test statistic.
+                     name = 'CSectT',
+                     #' @description
+                     #' Computes the AAR/CAAR cross-sectional t test statistics.
+                     #'
+                     #' @param data_tbl The data for a multiple event with
+                     #' calculated abnormal returns.
+                     #' @param model The fitted model: not necessary for this
+                     #' test statistics.
+                     compute = function(data_tbl, model) {
+                       # A2 (2026-09-24): exclude all-NA events (idempotent -- a
+                       # no-op if execute.R already applied the central pass).
+                       excl <- .exclude_all_na_events(data_tbl, model,
+                                                       .resolve_degenerate_mode(NULL),
+                                                       class(self)[1])
+                       data_tbl <- excl$data_tbl
+
+                       # AAR & AAR T Test
+                       aar_caar_stats = data_tbl %>%
+                         dplyr::filter(event_window == 1) %>%
+                         dplyr::group_by(relative_index) %>%
+                         dplyr::summarise(aar            = mean(abnormal_returns, na.rm = TRUE),
+                                          n_events       = dplyr::n(),
+                                          n_valid_events = sum(!is.na(abnormal_returns)),
+                                          # A9 (2026-09-24): strict sign convention, matching
+                                          # SignTest (n_pos: > 0, n_neg: <= 0). An AR exactly
+                                          # 0 is counted in n_neg, not n_pos.
+                                          n_pos          = sum(abnormal_returns > 0, na.rm = TRUE),
+                                          n_neg          = sum(abnormal_returns <= 0, na.rm = TRUE),
+                                          aar_t          = {
+                                            sd_ar <- sd(abnormal_returns, na.rm = TRUE)
+                                            if (is.finite(sd_ar) && sd_ar > 0) sqrt(n_valid_events) * aar / sd_ar else NA_real_
+                                          },
+                                          .groups = "drop")
+
+                       # Calculate SD_CAAR for each window
+                       sd_caar = data_tbl %>%
+                         dplyr::filter(event_window == 1) %>%
+                         dplyr::select(event_id, relative_index, abnormal_returns) %>%
+                         dplyr::group_by(event_id) %>%
+                         dplyr::mutate(car = cumsum(dplyr::coalesce(abnormal_returns, 0))) %>%
+                         dplyr::group_by(relative_index) %>%
+                         dplyr::summarise(sd_caar = sd(car, na.rm=TRUE))
+
+                       # Finally, the t statistic for CAAR and each window is calculated
+                       aar_caar_stats = aar_caar_stats %>%
+                         dplyr::mutate(caar = cumsum(dplyr::coalesce(aar, 0))) %>%
+                         dplyr::left_join(sd_caar, by="relative_index") %>%
+                         dplyr::mutate(caar_t = ifelse(is.finite(sd_caar) & sd_caar > 0,
+                                                        sqrt(n_valid_events) * caar / sd_caar,
+                                                        NA_real_)) %>%
+                         dplyr::select(-sd_caar)
+
+                       aar_caar_stats$car_window = stringr::str_c("[", aar_caar_stats$relative_index[1], ", ", aar_caar_stats$relative_index, "]")
+
+                       aar_caar_stats
+                     }
+                   )
+)
+
+
+#' Patell or Standardized Residual Test (PatellZTest)
+#'
+#' The Patell or Standardized Residual Test is a statistical tool employed in event
+#' studies to evaluate the null hypothesis that the average abnormal return at
+#' the event date is zero. The test statistics is approximately distributed as
+#' N(0, 1).
+#'
+#' See also \url{https://eventstudy.de/statistics/aar_caar_statistics.html}
+#'
+#' @family eventstudy-statistics
+#' @export
+PatellZTest <- R6Class("PatellZTest",
+                      inherit = TestStatisticBase,
+                      public = list(
+                        #' @field name Short code of the test statistic.
+                        name = 'PatellZ',
+                        #' @description
+                        #' Computes the Patell Z test statistics for multiple events.
+                        #'
+                        #' @param data_tbl The data for a multiple event with
+                        #' calculated abnormal returns.
+                        #' @param model The fitted model.
+                        compute = function(data_tbl, model) {
+                          # A2 (2026-09-24): exclude all-NA events (idempotent).
+                          excl <- .exclude_all_na_events(data_tbl, model,
+                                                          .resolve_degenerate_mode(NULL),
+                                                          class(self)[1])
+                          data_tbl <- excl$data_tbl
+                          model    <- excl$model
+
+                          # A6 (2026-09-24): k = number of estimated parameters,
+                          # read explicitly from each model's statistics$n_params
+                          # (MarketModel 2, FF3 4, Carhart4 5, FF5 6, CPMA 1,
+                          # MarketAdjusted 0, ...). Falls back to 2 (intercept +
+                          # slope) ONLY when a model does not report n_params
+                          # (user subclasses, list-mock test fixtures). The
+                          # previous length(resid) - df derivation is removed:
+                          # it silently produced the WRONG k whenever df already
+                          # reflected a different correction (e.g. HAC df
+                          # adjustments), inflating or deflating Q_i.
+                          k_by_event = model %>%
+                            dplyr::mutate(k = purrr::map_dbl(model, function(x) {
+                              kk <- x$statistics$n_params
+                              if (is.null(kk) || length(kk) != 1 || !is.finite(kk)) 2 else kk
+                            })) %>%
+                            dplyr::select(event_id, k)
+
+                          # Key all per-event quantities on event_id, not
+                          # firm_symbol: each event is fit separately and a firm
+                          # may recur across events.
+                          # A6: m = number of FINITE (valid) estimation-window
+                          # abnormal returns per event, not the raw row count --
+                          # NA rows in the estimation window must not inflate m.
+                          sd_asar = data_tbl %>%
+                            dplyr::filter(estimation_window == 1) %>%
+                            dplyr::group_by(event_id) %>%
+                            dplyr::summarise(m = sum(is.finite(abnormal_returns)), .groups = "drop") %>%
+                            dplyr::left_join(k_by_event, by = "event_id") %>%
+                            dplyr::mutate(
+                              Q_i = ifelse(
+                                m > k + 2,
+                                (m - k) / (m - k - 2),
+                                1  # fallback: insufficient obs for Q_i adjustment
+                              )
+                            )
+
+                          # Extract forecast error corrected sigma (vector per firm)
+                          fec_sigma = model %>%
+                            dplyr::mutate(fec_sigma = purrr::map(model, .f=function(x) {
+                              fec <- x$statistics$forecast_error_corrected_sigma
+                              if (is.null(fec)) NA_real_ else fec
+                            })) %>%
+                            dplyr::select(event_id, fec_sigma) %>%
+                            tidyr::unnest(fec_sigma) %>%
+                            dplyr::group_by(event_id) %>%
+                            dplyr::mutate(day_index = dplyr::row_number()) %>%
+                            dplyr::ungroup()
+
+                          # Standardize abnormal returns by forecast-error-corrected sigma
+                          aar_caar_stats_tmp = data_tbl %>%
+                            dplyr::filter(event_window == 1) %>%
+                            dplyr::group_by(event_id) %>%
+                            dplyr::mutate(day_index = dplyr::row_number()) %>%
+                            dplyr::ungroup() %>%
+                            dplyr::left_join(fec_sigma, by = c("event_id", "day_index")) %>%
+                            dplyr::mutate(standardized_abnormal_returns = abnormal_returns / fec_sigma)
+
+                          # AAR & AAR Z Test
+                          # WR-01 fix: exclude degenerate events (all-NA fec_sigma) from Q_total.
+                          # Degenerate events contribute Q_i = 1 (the fallback at the sd_asar step)
+                          # inflating the denominator and deflating valid-event z-scores. Only sum
+                          # Q_i for events where at least one fec_sigma value is finite.
+                          valid_event_ids <- fec_sigma %>%
+                            dplyr::group_by(event_id) %>%
+                            dplyr::summarise(.valid = any(is.finite(fec_sigma)), .groups = "drop") %>%
+                            dplyr::filter(.valid) %>%
+                            dplyr::pull(event_id)
+                          sd_asar_valid <- sd_asar %>% dplyr::filter(event_id %in% valid_event_ids)
+                          Q_total = sqrt(sum(sd_asar_valid$Q_i))
+
+                          aar_caar_stats = aar_caar_stats_tmp %>%
+                            dplyr::group_by(relative_index) %>%
+                            dplyr::summarise(aar            = mean(abnormal_returns, na.rm = TRUE),
+                                             sum_sar        = sum(standardized_abnormal_returns, na.rm = TRUE),
+                                             n_events       = dplyr::n(),
+                                             n_valid_events = sum(!is.na(abnormal_returns)),
+                                             # A9 (2026-09-24): strict sign convention (n_pos: > 0,
+                                             # n_neg: <= 0), matching SignTest.
+                                             n_pos          = sum(abnormal_returns > 0, na.rm = TRUE),
+                                             n_neg          = sum(abnormal_returns <= 0, na.rm = TRUE),
+                                             # STATS-04: n_events == 1 yields a statistically invalid
+                                             # z-score (the Patell approximation requires N >= 2 for
+                                             # the variance to be estimable). Return NA instead of a
+                                             # finite-but-invalid number.
+                                             aar_z          = ifelse(n_valid_events <= 1,
+                                                                     NA_real_,
+                                                                     sum_sar / Q_total),
+                                             .groups = "drop") %>%
+                            dplyr::select(-sum_sar)
+
+                          sd_caar = aar_caar_stats_tmp %>%
+                            dplyr::left_join(sd_asar, by = "event_id") %>%
+                            dplyr::group_by(event_id) %>%
+                            dplyr::mutate(csar = cumsum(dplyr::coalesce(standardized_abnormal_returns, 0)),
+                                          n    = dplyr::row_number(),
+                                          csar = csar / sqrt(n * .data$Q_i)) %>%
+                            dplyr::group_by(relative_index) %>%
+                            dplyr::summarise(caar_z = 1 / sqrt(dplyr::n()) * sum(csar, na.rm = TRUE))
+
+                          aar_caar_stats = aar_caar_stats %>%
+                            dplyr::mutate(caar = cumsum(dplyr::coalesce(aar, 0))) %>%
+                            dplyr::left_join(sd_caar, by = "relative_index") %>%
+                            # STATS-04: propagate n_events==1 guard to caar_z as well.
+                            dplyr::mutate(caar_z = ifelse(n_valid_events <= 1, NA_real_, caar_z))
+
+                          aar_caar_stats$car_window = stringr::str_c("[", aar_caar_stats$relative_index[1], ", ", aar_caar_stats$relative_index, "]")
+                          aar_caar_stats
+                        }
+                      )
+)
+
+
+#' Sign Test for Multiple Events
+#'
+#' Tests whether the proportion of positive abnormal returns differs
+#' significantly from 0.5 under the null hypothesis. The test statistic
+#' is approximately distributed as N(0, 1).
+#'
+#' @family eventstudy-statistics
+#' @export
+SignTest <- R6Class("SignTest",
+                    inherit = TestStatisticBase,
+                    public = list(
+                      #' @field name Short code of the test statistic.
+                      name = 'SignT',
+                      #' @description
+                      #' Computes the sign test for multiple events.
+                      #'
+                      #' @param data_tbl The data for a multiple event with
+                      #' calculated abnormal returns.
+                      #' @param model The fitted model (unused).
+                      compute = function(data_tbl, model) {
+                        # A2 (2026-09-24): exclude all-NA events (idempotent).
+                        excl <- .exclude_all_na_events(data_tbl, model,
+                                                        .resolve_degenerate_mode(NULL),
+                                                        class(self)[1])
+                        data_tbl <- excl$data_tbl
+
+                        aar_stats = data_tbl %>%
+                          dplyr::filter(event_window == 1) %>%
+                          dplyr::group_by(relative_index) %>%
+                          dplyr::summarise(
+                            aar            = mean(abnormal_returns, na.rm = TRUE),
+                            n_events       = dplyr::n(),
+                            n_valid_events = sum(!is.na(abnormal_returns)),
+                            n_pos          = sum(abnormal_returns > 0, na.rm = TRUE),
+                            n_neg          = sum(abnormal_returns <= 0, na.rm = TRUE),
+                            .groups = "drop"
+                          ) %>%
+                          dplyr::mutate(
+                            # Sign test: (n_pos - 0.5*N) / (0.5*sqrt(N))
+                            # STATS-04: n_events == 1 produces a finite-but-statistically-invalid
+                            # z (the sign test needs at least 2 observations to be meaningful).
+                            # Guard: require n_valid_events >= 2, not just > 0.
+                            sign_z = ifelse(n_valid_events >= 2,
+                                            (n_pos - 0.5 * n_valid_events) / (0.5 * sqrt(n_valid_events)),
+                                            NA_real_),
+                            caar   = cumsum(dplyr::coalesce(aar, 0))
+                          )
+
+                        # Cumulative sign test
+                        cum_sign = data_tbl %>%
+                          dplyr::filter(event_window == 1) %>%
+                          dplyr::select(event_id, relative_index, abnormal_returns) %>%
+                          dplyr::group_by(event_id) %>%
+                          dplyr::mutate(car = cumsum(dplyr::coalesce(abnormal_returns, 0))) %>%
+                          dplyr::group_by(relative_index) %>%
+                          dplyr::summarise(
+                            n_pos_car = sum(car > 0, na.rm = TRUE),
+                            n_valid   = sum(!is.na(car)),
+                            # WR-02 fix: guard n_valid >= 2, mirroring the point-in-time sign_z guard.
+                            # When n_valid == 1 the formula yields a finite but statistically
+                            # meaningless number. Return NA instead (same pattern as sign_z).
+                            csign_z   = ifelse(n_valid >= 2,
+                                               (n_pos_car - 0.5 * n_valid) / (0.5 * sqrt(n_valid)),
+                                               NA_real_),
+                            .groups = "drop"
+                          )
+
+                        aar_stats = aar_stats %>%
+                          dplyr::left_join(cum_sign %>% dplyr::select(relative_index, csign_z),
+                                           by = "relative_index")
+
+                        aar_stats$car_window = stringr::str_c("[", aar_stats$relative_index[1], ", ", aar_stats$relative_index, "]")
+                        aar_stats
+                      }
+                    )
+)
+
+
+#' Generalized Sign Test (Cowan 1992)
+#'
+#' Adjusts the sign test for the expected proportion of positive abnormal
+#' returns estimated from the estimation window, rather than assuming 0.5.
+#' This accounts for asymmetry in the return distribution.
+#'
+#' @family eventstudy-statistics
+#' @export
+GeneralizedSignTest <- R6Class("GeneralizedSignTest",
+                               inherit = TestStatisticBase,
+                               public = list(
+                                 #' @field name Short code of the test statistic.
+                                 name = 'GSignT',
+                                 #' @description
+                                 #' Computes the generalized sign test for multiple events.
+                                 #'
+                                 #' @param data_tbl The data for a multiple event with
+                                 #' calculated abnormal returns.
+                                 #' @param model The fitted model (unused).
+                                 compute = function(data_tbl, model) {
+                                   # A2 (2026-09-24): exclude all-NA events (idempotent).
+                                   excl <- .exclude_all_na_events(data_tbl, model,
+                                                                   .resolve_degenerate_mode(NULL),
+                                                                   class(self)[1])
+                                   data_tbl <- excl$data_tbl
+
+                                   # A4 (2026-09-24): estimate p_hat PER EVENT, not per
+                                   # firm_symbol -- a firm recurring across several
+                                   # events must not have its estimation-window ARs
+                                   # pooled across those events (each event is fit
+                                   # independently and a firm_symbol grouping silently
+                                   # mixes unrelated estimation windows).
+                                   p_hat_by_event = data_tbl %>%
+                                     dplyr::filter(estimation_window == 1) %>%
+                                     dplyr::group_by(event_id) %>%
+                                     dplyr::summarise(
+                                       p_hat = mean(abnormal_returns > 0, na.rm = TRUE),
+                                       .groups = "drop"
+                                     )
+
+                                   # Average p_hat across events
+                                   p_hat = mean(p_hat_by_event$p_hat, na.rm = TRUE)
+
+                                   aar_stats = data_tbl %>%
+                                     dplyr::filter(event_window == 1) %>%
+                                     dplyr::group_by(relative_index) %>%
+                                     dplyr::summarise(
+                                       aar            = mean(abnormal_returns, na.rm = TRUE),
+                                       n_events       = dplyr::n(),
+                                       n_valid_events = sum(!is.na(abnormal_returns)),
+                                       n_pos          = sum(abnormal_returns > 0, na.rm = TRUE),
+                                       n_neg          = sum(abnormal_returns <= 0, na.rm = TRUE),
+                                       .groups = "drop"
+                                     ) %>%
+                                     dplyr::mutate(
+                                       gsign_z = {
+                                         denom <- sqrt(n_valid_events * p_hat * (1 - p_hat))
+                                         # STATS-04: n_events == 1 gives a finite-but-invalid z
+                                         # (a sign-family test needs >= 2 observations to be
+                                         # meaningful). Require n_valid_events >= 2, matching
+                                         # SignTest, so the multi-event statistic set is uniform.
+                                         ifelse(n_valid_events >= 2 & is.finite(denom) & denom > 0,
+                                                (n_pos - n_valid_events * p_hat) / denom,
+                                                NA_real_)
+                                       },
+                                       caar = cumsum(dplyr::coalesce(aar, 0))
+                                     )
+
+                                   # Cumulative generalized sign test
+                                   cum_gsign = data_tbl %>%
+                                     dplyr::filter(event_window == 1) %>%
+                                     dplyr::select(event_id, relative_index, abnormal_returns) %>%
+                                     dplyr::group_by(event_id) %>%
+                                     dplyr::mutate(car = cumsum(dplyr::coalesce(abnormal_returns, 0))) %>%
+                                     dplyr::group_by(relative_index) %>%
+                                     dplyr::summarise(
+                                       n_pos_car = sum(car > 0, na.rm = TRUE),
+                                       n_valid   = sum(!is.na(car)),
+                                       cgsign_z  = {
+                                         denom <- sqrt(n_valid * p_hat * (1 - p_hat))
+                                         # STATS-04: same n >= 2 guard on the cumulative z.
+                                         ifelse(n_valid >= 2 & is.finite(denom) & denom > 0,
+                                                (n_pos_car - n_valid * p_hat) / denom,
+                                                NA_real_)
+                                       },
+                                       .groups = "drop"
+                                     )
+
+                                   aar_stats = aar_stats %>%
+                                     dplyr::left_join(cum_gsign %>% dplyr::select(relative_index, cgsign_z),
+                                                      by = "relative_index")
+
+                                   aar_stats$car_window = stringr::str_c("[", aar_stats$relative_index[1], ", ", aar_stats$relative_index, "]")
+                                   aar_stats
+                                 }
+                               )
+)
+
+
+#' Rank Test (Corrado 1989)
+#'
+#' Non-parametric rank test for event studies. Ranks abnormal returns
+#' across the combined estimation and event windows, which is robust
+#' to non-normality of abnormal returns.
+#'
+#' @family eventstudy-statistics
+#' @export
+RankTest <- R6Class("RankTest",
+                    inherit = TestStatisticBase,
+                    public = list(
+                      #' @field name Short code of the test statistic.
+                      name = 'RankT',
+                      #' @description
+                      #' Computes the Corrado rank test for multiple events.
+                      #'
+                      #' @param data_tbl The data for a multiple event with
+                      #' calculated abnormal returns.
+                      #' @param model The fitted model (unused).
+                      compute = function(data_tbl, model) {
+                        # A4 (2026-09-24): rank and center WITHIN EACH EVENT, not
+                        # within each firm_symbol -- a firm recurring across
+                        # several events must not have its combined-window ARs
+                        # pooled across those events for ranking purposes.
+                        ranked_data = data_tbl %>%
+                          dplyr::filter(estimation_window == 1 | event_window == 1) %>%
+                          dplyr::group_by(event_id) %>%
+                          dplyr::mutate(
+                            total_obs = dplyr::n(),
+                            ar_rank   = rank(abnormal_returns, na.last = "keep"),
+                            # Center ranks: K_it = rank / (T+1) - 0.5
+                            centered_rank = ar_rank / (total_obs + 1) - 0.5
+                          ) %>%
+                          dplyr::ungroup()
+
+                        # Compute standard deviation of centered ranks across estimation window
+                        sd_rank = ranked_data %>%
+                          dplyr::group_by(relative_index) %>%
+                          dplyr::summarise(
+                            mean_centered_rank = mean(centered_rank, na.rm = TRUE),
+                            .groups = "drop"
+                          )
+
+                        S_rank = sd(sd_rank$mean_centered_rank, na.rm = TRUE)
+
+                        # Event window statistics
+                        aar_stats = ranked_data %>%
+                          dplyr::filter(event_window == 1) %>%
+                          dplyr::group_by(relative_index) %>%
+                          dplyr::summarise(
+                            aar            = mean(abnormal_returns, na.rm = TRUE),
+                            n_events       = dplyr::n(),
+                            n_valid_events = sum(!is.na(abnormal_returns)),
+                            n_pos          = sum(abnormal_returns > 0, na.rm = TRUE),
+                            n_neg          = sum(abnormal_returns <= 0, na.rm = TRUE),
+                            mean_rank      = mean(centered_rank, na.rm = TRUE),
+                            .groups = "drop"
+                          ) %>%
+                          dplyr::mutate(
+                            # S_rank is a scalar; base ifelse() returns a result the
+                            # length of its (length-1) condition, silently collapsing
+                            # the per-day mean_rank / S_rank vector to its first element
+                            # and recycling it across every event day. Guard the scalar
+                            # denominator once, then divide the vector directly so each
+                            # day keeps its own Corrado (1989) rank z (WR bugfix).
+                            rank_z = if (is.finite(S_rank) && S_rank > 0)
+                              mean_rank / S_rank else NA_real_,
+                            caar   = cumsum(dplyr::coalesce(aar, 0))
+                          )
+
+                        aar_stats$car_window = stringr::str_c("[", aar_stats$relative_index[1], ", ", aar_stats$relative_index, "]")
+                        aar_stats
+                      }
+                    )
+)
+
+
+#' BMP Test (Boehmer, Musumeci, Poulsen 1991)
+#'
+#' Standardized cross-sectional test that is robust to event-induced variance
+#' increases. The BMP test standardizes abnormal returns by each event's
+#' MODEL sigma (the estimation-window residual standard deviation, i.e.
+#' \code{model$statistics$sigma}) -- NOT by the forecast-error-corrected
+#' sigma -- then applies a cross-sectional t-test to these standardized
+#' residuals.
+#'
+#' @family eventstudy-statistics
+#' @export
+BMPTest <- R6Class("BMPTest",
+                   inherit = TestStatisticBase,
+                   public = list(
+                     #' @field name Short code of the test statistic.
+                     name = 'BMP',
+                     #' @description
+                     #' Computes the BMP standardized cross-sectional test.
+                     #'
+                     #' @param data_tbl The data for a multiple event with
+                     #' calculated abnormal returns.
+                     #' @param model The fitted model containing sigma estimates.
+                     compute = function(data_tbl, model) {
+                       # A2 (2026-09-24): exclude all-NA events (idempotent).
+                       excl <- .exclude_all_na_events(data_tbl, model,
+                                                       .resolve_degenerate_mode(NULL),
+                                                       class(self)[1])
+                       data_tbl <- excl$data_tbl
+                       model    <- excl$model
+
+                       # Extract sigma from each model
+                       model = model %>%
+                         dplyr::mutate(sigma = purrr::map_dbl(model, .f=function(x) {
+                           x$statistics$sigma %||% NA_real_
+                         }))
+
+                       # Standardize abnormal returns by model sigma.
+                       # Join on event_id, not firm_symbol: sigma is estimated
+                       # per event, and a firm may appear in several events. A
+                       # firm_symbol join is many-to-many and duplicates rows.
+                       sar_data = data_tbl %>%
+                         dplyr::filter(event_window == 1) %>%
+                         dplyr::left_join(model %>% dplyr::select(event_id, sigma),
+                                          by = "event_id") %>%
+                         dplyr::mutate(sar = abnormal_returns / sigma)
+
+                       # BMP test: cross-sectional t-test of SARs
+                       aar_stats = sar_data %>%
+                         dplyr::group_by(relative_index) %>%
+                         dplyr::summarise(
+                           aar            = mean(abnormal_returns, na.rm = TRUE),
+                           n_events       = dplyr::n(),
+                           n_valid_events = sum(!is.na(abnormal_returns)),
+                           n_pos          = sum(abnormal_returns > 0, na.rm = TRUE),
+                           n_neg          = sum(abnormal_returns <= 0, na.rm = TRUE),
+                           mean_sar       = mean(sar, na.rm = TRUE),
+                           sd_sar         = sd(sar, na.rm = TRUE),
+                           bmp_t          = ifelse(is.finite(sd_sar) & sd_sar > 0,
+                                                    sqrt(n_valid_events) * mean_sar / sd_sar,
+                                                    NA_real_),
+                           .groups = "drop"
+                         ) %>%
+                         dplyr::mutate(caar = cumsum(dplyr::coalesce(aar, 0)))
+
+                       # Cumulative BMP
+                       cum_sar = sar_data %>%
+                         dplyr::select(event_id, relative_index, sar) %>%
+                         dplyr::group_by(event_id) %>%
+                         dplyr::mutate(csar = cumsum(dplyr::coalesce(sar, 0))) %>%
+                         dplyr::group_by(relative_index) %>%
+                         dplyr::summarise(
+                           mean_csar = mean(csar, na.rm = TRUE),
+                           sd_csar   = sd(csar, na.rm = TRUE),
+                           n_valid   = sum(!is.na(csar)),
+                           cbmp_t    = ifelse(is.finite(sd_csar) & sd_csar > 0,
+                                              sqrt(n_valid) * mean_csar / sd_csar,
+                                              NA_real_),
+                           .groups = "drop"
+                         )
+
+                       aar_stats = aar_stats %>%
+                         dplyr::left_join(cum_sar %>% dplyr::select(relative_index, cbmp_t),
+                                          by = "relative_index")
+
+                       aar_stats$car_window = stringr::str_c("[", aar_stats$relative_index[1], ", ", aar_stats$relative_index, "]")
+                       aar_stats
+                     }
+                   )
+)
+
+
+#' Calendar-Time Portfolio Test
+#'
+#' Aggregates event-firm returns into calendar-time portfolios and tests
+#' whether the portfolio intercept (alpha) is significantly different from
+#' zero, using the Brown and Warner (1980, 1985) crude-dependence-adjustment:
+#' the standard deviation of the ESTIMATION-window cross-event average
+#' abnormal return (AAR) series is used as the (calendar-)time-series
+#' standard deviation, so the denominator is independent of the event window
+#' and of any event-window shock magnitude.
+#'
+#' For each relative event day, the test forms an equal-weighted portfolio
+#' of all event firms' abnormal returns and computes
+#' \eqn{caltime_t = AAR_t / sd(AAR_{estimation})}, with degrees of freedom
+#' \code{n_estimation_days - 1} (the number of finite estimation-window AAR
+#' observations), exposed as \code{attr(result, "caltime_df")}.
+#'
+#' @references
+#' Brown, S. J. and Warner, J. B. (1980). Measuring security price
+#' performance. \emph{Journal of Financial Economics}, 8(3), 205--258.
+#'
+#' Brown, S. J. and Warner, J. B. (1985). Using daily stock returns: The
+#' case of event studies. \emph{Journal of Financial Economics}, 14(1),
+#' 3--31.
+#'
+#' @family eventstudy-statistics
+#' @export
+CalendarTimePortfolioTest <- R6Class("CalendarTimePortfolioTest",
+                                      inherit = TestStatisticBase,
+                                      public = list(
+                                        #' @field name Short code of the test statistic.
+                                        name = 'CalTimeT',
+                                        #' @description
+                                        #' Computes the calendar-time portfolio test.
+                                        #'
+                                        #' @param data_tbl The data for multiple events with
+                                        #' calculated abnormal returns.
+                                        #' @param model The fitted models (unused directly).
+                                        compute = function(data_tbl, model) {
+                                          mode <- .resolve_degenerate_mode(NULL)
+
+                                          # A7 (2026-09-24): Brown-Warner time-series standard
+                                          # deviation, computed from the ESTIMATION-window
+                                          # cross-event average abnormal return (AAR) series --
+                                          # NOT from the event-window portfolio series. This
+                                          # denominator is therefore independent of the event
+                                          # window and of any event-day shock: doubling an
+                                          # event-day AR exactly doubles caltime_t on that day.
+                                          est_aar <- data_tbl %>%
+                                            dplyr::filter(estimation_window == 1) %>%
+                                            dplyr::group_by(relative_index) %>%
+                                            dplyr::summarise(aar = mean(abnormal_returns, na.rm = TRUE),
+                                                              .groups = "drop") %>%
+                                            dplyr::filter(is.finite(aar))
+
+                                          n_estimation_days <- nrow(est_aar)
+                                          ts_sd <- stats::sd(est_aar$aar, na.rm = TRUE)
+                                          ts_ok <- n_estimation_days >= 2 && is.finite(ts_sd) && ts_sd > 0
+
+                                          if (!ts_ok) {
+                                            .handle_degenerate(
+                                              mode      = mode,
+                                              condition = paste0(
+                                                "insufficient estimation-window AAR observations for ",
+                                                "the Brown-Warner time-series standard deviation (",
+                                                n_estimation_days, " finite estimation day(s))"
+                                              ),
+                                              component   = "CalendarTimePortfolioTest",
+                                              private_env = NULL
+                                            )
+                                          }
+
+                                          # Portfolio approach: for each relative event day,
+                                          # form equal-weighted portfolio of ARs
+                                          portfolio <- data_tbl %>%
+                                            dplyr::filter(event_window == 1) %>%
+                                            dplyr::group_by(relative_index) %>%
+                                            dplyr::summarise(
+                                              aar = mean(abnormal_returns, na.rm = TRUE),
+                                              n_events = dplyr::n(),
+                                              n_valid_events = sum(!is.na(abnormal_returns)),
+                                              # A9 (2026-09-24): strict sign convention (n_pos: > 0,
+                                              # n_neg: <= 0), matching SignTest.
+                                              n_pos = sum(abnormal_returns > 0, na.rm = TRUE),
+                                              n_neg = sum(abnormal_returns <= 0, na.rm = TRUE),
+                                              .groups = "drop"
+                                            )
+
+                                          n_periods <- nrow(portfolio)
+
+                                          # STATS-04: a calendar-time PORTFOLIO test pools
+                                          # abnormal returns across events; with a single event
+                                          # (max n_events == 1) the cross-event portfolio
+                                          # degenerates to one firm's series and the statistic is
+                                          # not a valid multi-event test. Return NA uniformly with
+                                          # the rest of the multi-event set rather than a
+                                          # finite-but-invalid t. Cross-sectional (multi-event)
+                                          # validity requires n_events >= 2.
+                                          n_events_ok <- max(portfolio$n_events, na.rm = TRUE) >= 2
+                                          portfolio <- portfolio %>%
+                                            dplyr::mutate(
+                                              caar = cumsum(dplyr::coalesce(aar, 0)),
+                                              # Time-series t-stat: AAR_t / sd(AAR_estimation)
+                                              caltime_t = if (ts_ok && n_events_ok) aar / ts_sd else NA_real_,
+                                              # CAAR t-stat: CAAR / (sd(AAR_estimation) * sqrt(L))
+                                              ccaltime_t = if (ts_ok && n_events_ok)
+                                                caar / (ts_sd * sqrt(seq_len(n_periods)))
+                                              else NA_real_
+                                            )
+
+                                          portfolio$car_window <- stringr::str_c(
+                                            "[", portfolio$relative_index[1], ", ",
+                                            portfolio$relative_index, "]"
+                                          )
+
+                                          result <- portfolio
+                                          # A7: expose the Brown-Warner estimation-window df so
+                                          # adjust_p_values() and tidy() use the correct
+                                          # time-series df instead of a cross-sectional one.
+                                          # Consumers floor this at 1 before calling pt().
+                                          attr(result, "caltime_df") <- n_estimation_days - 1
+                                          result
+                                        }
+                                      )
+)
+
+
+#' Kolari-Pynnoenen Adjusted BMP Test
+#'
+#' Adjusts the BMP (Boehmer, Musumeci, Poulsen 1991) test for cross-sectional
+#' correlation of abnormal returns using the Kolari and Pynnoenen (2010)
+#' correction. Abnormal returns are standardized by each event's MODEL sigma
+#' (\code{model$statistics$sigma}, same as \code{\link{BMPTest}}) -- not the
+#' forecast-error-corrected sigma. The adjustment scales the BMP statistic by
+#' a factor that accounts for the average pairwise correlation of
+#' standardized abnormal residuals in the estimation window, computed only
+#' over "usable" events (at least 2 finite estimation-window SARs, finite
+#' model sigma, and non-constant/non-degenerate SAR variance). The adjustment
+#' is never silently substituted with 1: an event that cannot contribute a
+#' usable estimation-window series is excluded from the correlation estimate
+#' and reported once; if fewer than 2 usable events remain, \code{kp_t} and
+#' \code{ckp_t} are \code{NA}.
+#'
+#' @references
+#' Kolari, J. W. and Pynnoenen, S. (2010). Event Study Testing with
+#' Cross-sectional Correlation of Abnormal Returns.
+#' \emph{The Review of Financial Studies}, 23(11), 3996--4025.
+#'
+#' @family eventstudy-statistics
+#' @export
+KolariPynnonenTest <- R6Class("KolariPynnonenTest",
+                               inherit = TestStatisticBase,
+                               public = list(
+                                 #' @field name Short code of the test statistic.
+                                 name = 'KP',
+                                 #' @description
+                                 #' Computes the Kolari-Pynnoenen adjusted BMP test.
+                                 #'
+                                 #' @param data_tbl The data for a multiple event with
+                                 #' calculated abnormal returns.
+                                 #' @param model The fitted model containing sigma estimates.
+                                 compute = function(data_tbl, model) {
+                                   mode <- .resolve_degenerate_mode(NULL)
+
+                                   # A2 (2026-09-24): exclude all-NA events (idempotent).
+                                   excl <- .exclude_all_na_events(data_tbl, model, mode,
+                                                                   class(self)[1])
+                                   data_tbl <- excl$data_tbl
+                                   model    <- excl$model
+
+                                   # Extract sigma from each model
+                                   model <- model %>%
+                                     dplyr::mutate(sigma = purrr::map_dbl(model, .f = function(x) {
+                                       x$statistics$sigma %||% NA_real_
+                                     }))
+
+                                   # Standardize abnormal returns by model sigma.
+                                   # Join on event_id (see BMPTest): a firm_symbol
+                                   # join is many-to-many when a firm recurs.
+                                   sar_data <- data_tbl %>%
+                                     dplyr::filter(event_window == 1) %>%
+                                     dplyr::left_join(model %>% dplyr::select(event_id, sigma),
+                                                      by = "event_id") %>%
+                                     dplyr::mutate(sar = abnormal_returns / sigma)
+
+                                   # --- BMP statistics (replicated from BMPTest) ---
+                                   aar_stats <- sar_data %>%
+                                     dplyr::group_by(relative_index) %>%
+                                     dplyr::summarise(
+                                       aar            = mean(abnormal_returns, na.rm = TRUE),
+                                       n_events       = dplyr::n(),
+                                       n_valid_events = sum(!is.na(abnormal_returns)),
+                                       n_pos          = sum(abnormal_returns > 0, na.rm = TRUE),
+                                       n_neg          = sum(abnormal_returns <= 0, na.rm = TRUE),
+                                       mean_sar       = mean(sar, na.rm = TRUE),
+                                       sd_sar         = sd(sar, na.rm = TRUE),
+                                       bmp_t          = ifelse(is.finite(sd_sar) & sd_sar > 0,
+                                                                sqrt(n_valid_events) * mean_sar / sd_sar,
+                                                                NA_real_),
+                                       .groups = "drop"
+                                     ) %>%
+                                     dplyr::mutate(caar = cumsum(dplyr::coalesce(aar, 0)))
+
+                                   # Cumulative BMP
+                                   cum_sar <- sar_data %>%
+                                     dplyr::select(event_id, relative_index, sar) %>%
+                                     dplyr::group_by(event_id) %>%
+                                     dplyr::mutate(csar = cumsum(dplyr::coalesce(sar, 0))) %>%
+                                     dplyr::group_by(relative_index) %>%
+                                     dplyr::summarise(
+                                       mean_csar = mean(csar, na.rm = TRUE),
+                                       sd_csar   = sd(csar, na.rm = TRUE),
+                                       n_valid   = sum(!is.na(csar)),
+                                       cbmp_t    = ifelse(is.finite(sd_csar) & sd_csar > 0,
+                                                           sqrt(n_valid) * mean_csar / sd_csar,
+                                                           NA_real_),
+                                       .groups = "drop"
+                                     )
+
+                                   # --- Kolari-Pynn\u00f6nen correction ---
+                                   # Compute average pairwise correlation of SARs from estimation window
+                                   est_sar_data <- data_tbl %>%
+                                     dplyr::filter(estimation_window == 1) %>%
+                                     dplyr::left_join(model %>% dplyr::select(event_id, sigma),
+                                                      by = "event_id") %>%
+                                     dplyr::mutate(sar = abnormal_returns / sigma)
+
+                                   # A3 (2026-09-24): determine USABLE events -- at least 2
+                                   # finite estimation-window SARs, finite model sigma, and
+                                   # strictly positive (non-constant) SAR standard deviation.
+                                   # Events that fail this are excluded from the correlation
+                                   # estimate (never silently folded in as a degenerate
+                                   # series) and reported once.
+                                   est_sar_stats <- est_sar_data %>%
+                                     dplyr::group_by(event_id) %>%
+                                     dplyr::summarise(
+                                       n_finite = sum(is.finite(sar)),
+                                       sd_sar   = stats::sd(sar, na.rm = TRUE),
+                                       .groups = "drop"
+                                     ) %>%
+                                     dplyr::left_join(model %>% dplyr::select(event_id, sigma),
+                                                       by = "event_id")
+
+                                   usable_events <- est_sar_stats %>%
+                                     dplyr::filter(n_finite >= 2, is.finite(sd_sar), sd_sar > 0,
+                                                   is.finite(sigma)) %>%
+                                     dplyr::pull(event_id)
+
+                                   all_est_events <- unique(est_sar_data$event_id)
+                                   excluded_events <- setdiff(all_est_events, usable_events)
+
+                                   warned <- FALSE
+                                   if (length(excluded_events) > 0) {
+                                     .handle_degenerate(
+                                       mode      = mode,
+                                       condition = paste0(
+                                         length(excluded_events), " event(s) excluded from the ",
+                                         "Kolari-Pynnoenen cross-sectional correlation estimate ",
+                                         "(non-usable estimation-window SAR series; event_id: ",
+                                         paste(excluded_events, collapse = ", "), ")"
+                                       ),
+                                       component   = "KolariPynnonenTest",
+                                       private_env = NULL
+                                     )
+                                     warned <- TRUE
+                                   }
+
+                                   # Pivot to wide: one column per USABLE event. Events, not
+                                   # firms, are the cross-sectional units, so a firm recurring
+                                   # in several events yields distinct columns (a firm_symbol
+                                   # pivot would collide).
+                                   est_sar_wide <- est_sar_data %>%
+                                     dplyr::filter(event_id %in% usable_events) %>%
+                                     dplyr::select(relative_index, event_id, sar) %>%
+                                     tidyr::pivot_wider(names_from = event_id,
+                                                        values_from = sar)
+
+                                   sar_matrix <- as.matrix(est_sar_wide[, -1, drop = FALSE])
+                                   n_usable <- ncol(sar_matrix)
+
+                                   if (n_usable >= 2) {
+                                     cor_matrix <- stats::cor(sar_matrix, use = "pairwise.complete.obs")
+                                     # Average off-diagonal correlation (numerically identical
+                                     # to the pre-fix formula when every event is usable).
+                                     r_bar <- (sum(cor_matrix, na.rm = TRUE) - n_usable) /
+                                       (n_usable * (n_usable - 1))
+                                     r_bar_valid <- is.finite(r_bar)
+                                   } else {
+                                     r_bar <- NA_real_
+                                     r_bar_valid <- FALSE
+                                   }
+
+                                   if (!r_bar_valid && !warned) {
+                                     .handle_degenerate(
+                                       mode      = mode,
+                                       condition = paste0(
+                                         "fewer than 2 usable events for the Kolari-Pynnoenen ",
+                                         "cross-sectional correlation estimate; kp_t/ckp_t set to NA"
+                                       ),
+                                       component   = "KolariPynnonenTest",
+                                       private_env = NULL
+                                     )
+                                   }
+
+                                   # KP adjustment factor: sqrt((1 - r_bar) / (1 + (n-1)*r_bar)).
+                                   # A3: n is the PER-DAY n_valid_events (previously a single
+                                   # scalar from the first row, applied uniformly to every day --
+                                   # each event day now gets its own adjustment). NEVER falls
+                                   # back to a factor of 1: an invalid adjustment yields NA.
+                                   .kp_adjustment <- function(n) {
+                                     denom <- 1 + (n - 1) * r_bar
+                                     numer <- 1 - r_bar
+                                     ifelse(r_bar_valid & is.finite(denom) & denom > 0 &
+                                              is.finite(numer) & numer >= 0,
+                                            sqrt(numer / denom), NA_real_)
+                                   }
+
+                                   aar_stats <- aar_stats %>%
+                                     dplyr::mutate(kp_t = bmp_t * .kp_adjustment(n_valid_events))
+
+                                   aar_stats <- aar_stats %>%
+                                     dplyr::left_join(
+                                       cum_sar %>% dplyr::select(relative_index, cbmp_t, n_valid),
+                                       by = "relative_index"
+                                     ) %>%
+                                     dplyr::mutate(ckp_t = cbmp_t * .kp_adjustment(n_valid)) %>%
+                                     dplyr::select(-mean_sar, -sd_sar, -bmp_t, -cbmp_t, -n_valid)
+
+                                   aar_stats$car_window <- stringr::str_c(
+                                     "[", aar_stats$relative_index[1], ", ",
+                                     aar_stats$relative_index, "]"
+                                   )
+                                   aar_stats
+                                 }
+                               )
+)

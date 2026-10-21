@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Simon Mueller" />
+
+<meta name="date" content="2026-10-09" />
+
+<title>Result Extraction and Export</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Result Extraction and Export</h1>
+<h4 class="author">Simon Mueller</h4>
+<h4 class="date">2026-10-09</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>After running an event study, you need to extract and export results
+for analysis, tables, and publication. This vignette covers all the ways
+to get results out of an <code>EventStudyTask</code>.</p>
+</div>
+<div id="running-the-example" class="section level1">
+<h1>Running the Example</h1>
+<p>First, let’s set up a complete event study (using synthetic data for
+reproducibility):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># Create task with synthetic data</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">create_mock_task</span>(<span class="at">n_firms =</span> <span class="dv">5</span>)  <span class="co"># helper for testing</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>params <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task, params)</span></code></pre></div>
+</div>
+<div id="extracting-results-programmatically" class="section level1">
+<h1>Extracting Results Programmatically</h1>
+<div id="abnormal-returns" class="section level2">
+<h2>Abnormal Returns</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Get AR for a specific event</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>ar <span class="ot">&lt;-</span> task<span class="sc">$</span><span class="fu">get_ar</span>(<span class="at">event_id =</span> <span class="dv">1</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>ar</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># # A tibble: 11 x 2</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#    relative_index abnormal_returns</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#             &lt;dbl&gt;            &lt;dbl&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#  1             -5         0.00234</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#  ...</span></span></code></pre></div>
+</div>
+<div id="cumulative-abnormal-returns" class="section level2">
+<h2>Cumulative Abnormal Returns</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Get CAR for a specific event</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>car <span class="ot">&lt;-</span> task<span class="sc">$</span><span class="fu">get_car</span>(<span class="at">event_id =</span> <span class="dv">1</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>car</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># # A tibble: 11 x 3</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#    relative_index abnormal_returns      car</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#             &lt;dbl&gt;            &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#  1             -5         0.00234  0.00234</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#  ...</span></span></code></pre></div>
+</div>
+<div id="average-abnormal-returns-aarcaar" class="section level2">
+<h2>Average Abnormal Returns (AAR/CAAR)</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Get AAR/CAAR from multi-event statistics</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>aar <span class="ot">&lt;-</span> task<span class="sc">$</span><span class="fu">get_aar</span>(<span class="at">stat_name =</span> <span class="st">&quot;CSectT&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>aar</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Returns the cross-sectional t-test results tibble</span></span></code></pre></div>
+</div>
+<div id="model-statistics" class="section level2">
+<h2>Model Statistics</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Get model fit statistics for a specific event</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>stats <span class="ot">&lt;-</span> task<span class="sc">$</span><span class="fu">get_model_stats</span>(<span class="at">event_id =</span> <span class="dv">1</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>stats<span class="sc">$</span>alpha</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>stats<span class="sc">$</span>beta</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>stats<span class="sc">$</span>sigma</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>stats<span class="sc">$</span>r2</span></code></pre></div>
+</div>
+</div>
+<div id="the-tidy-method" class="section level1">
+<h1>The tidy() Method</h1>
+<p>The <code>tidy.EventStudyTask()</code> method returns results in
+broom-compatible long format, making it easy to use with standard
+tidyverse workflows.</p>
+<div id="tidy-ar" class="section level2">
+<h2>Tidy AR</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>tidy_ar <span class="ot">&lt;-</span> <span class="fu">tidy.EventStudyTask</span>(task, <span class="at">type =</span> <span class="st">&quot;ar&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>tidy_ar</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co"># # A tibble: 55 x 7</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#    event_id group     firm_symbol term  estimate std.error statistic</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#       &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;       &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#  1        1 TestGroup FIRM_A      -5     0.00234   0.0102     0.229</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#  ...</span></span></code></pre></div>
+</div>
+<div id="tidy-car" class="section level2">
+<h2>Tidy CAR</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>tidy_car <span class="ot">&lt;-</span> <span class="fu">tidy.EventStudyTask</span>(task, <span class="at">type =</span> <span class="st">&quot;car&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># Includes cumulative AR with window labels as terms</span></span></code></pre></div>
+</div>
+<div id="tidy-aar" class="section level2">
+<h2>Tidy AAR</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>tidy_aar <span class="ot">&lt;-</span> <span class="fu">tidy.EventStudyTask</span>(task, <span class="at">type =</span> <span class="st">&quot;aar&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co"># Includes AAR, CAAR, and their test statistics with p-values</span></span></code></pre></div>
+</div>
+<div id="tidy-model" class="section level2">
+<h2>Tidy Model</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>tidy_model <span class="ot">&lt;-</span> <span class="fu">tidy.EventStudyTask</span>(task, <span class="at">type =</span> <span class="st">&quot;model&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co"># Returns alpha, beta, sigma, r.squared for each event</span></span></code></pre></div>
+</div>
+</div>
+<div id="exporting-results" class="section level1">
+<h1>Exporting Results</h1>
+<div id="export-to-csv" class="section level2">
+<h2>Export to CSV</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Export all results (creates separate files: results_ar.csv, results_car.csv, etc.)</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">export_results</span>(task, <span class="st">&quot;results.csv&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co"># Export specific results</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="fu">export_results</span>(task, <span class="st">&quot;model_stats.csv&quot;</span>, <span class="at">which =</span> <span class="st">&quot;model&quot;</span>)</span></code></pre></div>
+</div>
+<div id="export-to-excel" class="section level2">
+<h2>Export to Excel</h2>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Requires the openxlsx package</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co"># Each result type gets its own worksheet</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">export_results</span>(task, <span class="st">&quot;results.xlsx&quot;</span>)</span></code></pre></div>
+</div>
+<div id="export-to-latex" class="section level2">
+<h2>Export to LaTeX</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Produces publication-ready LaTeX tables</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co"># Requires the knitr package</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="fu">export_results</span>(task, <span class="st">&quot;results.tex&quot;</span>, <span class="at">which =</span> <span class="fu">c</span>(<span class="st">&quot;model&quot;</span>, <span class="st">&quot;aar&quot;</span>))</span></code></pre></div>
+</div>
+</div>
+<div id="cross-sectional-analysis-of-cars" class="section level1">
+<h1>Cross-Sectional Analysis of CARs</h1>
+<p>After extracting CARs, you can analyze what drives the
+cross-sectional variation:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Extract CARs for all events</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>all_cars <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map2_dfr</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  task<span class="sc">$</span>data_tbl<span class="sc">$</span>event_id,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  task<span class="sc">$</span>data_tbl<span class="sc">$</span>firm_symbol,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="cf">function</span>(eid, sym) {</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>    car <span class="ot">&lt;-</span> task<span class="sc">$</span><span class="fu">get_car</span>(<span class="at">event_id =</span> eid)</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>    tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>      <span class="at">event_id =</span> eid,</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>      <span class="at">firm_symbol =</span> sym,</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>      <span class="at">car_total =</span> <span class="fu">tail</span>(car<span class="sc">$</span>car, <span class="dv">1</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>    )</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>  }</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>)</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co"># Now you can regress CARs on firm characteristics</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co"># (see the cross_sectional_regression() function)</span></span></code></pre></div>
+</div>
+<div id="visualization" class="section level1">
+<h1>Visualization</h1>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Single-event plots</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">plot_event_study</span>(task, <span class="at">type =</span> <span class="st">&quot;ar&quot;</span>, <span class="at">event_id =</span> <span class="dv">1</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="fu">plot_event_study</span>(task, <span class="at">type =</span> <span class="st">&quot;car&quot;</span>, <span class="at">event_id =</span> <span class="dv">1</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co"># Multi-event plots</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="fu">plot_event_study</span>(task, <span class="at">type =</span> <span class="st">&quot;aar&quot;</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="fu">plot_event_study</span>(task, <span class="at">type =</span> <span class="st">&quot;caar&quot;</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co"># Model diagnostics</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="fu">plot_diagnostics</span>(task, <span class="at">event_id =</span> <span class="dv">1</span>)</span></code></pre></div>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<table>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Returns</th>
+<th>Format</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>get_ar()</code></td>
+<td>AR for one event</td>
+<td>tibble</td>
+</tr>
+<tr class="even">
+<td><code>get_car()</code></td>
+<td>CAR for one event</td>
+<td>tibble</td>
+</tr>
+<tr class="odd">
+<td><code>get_aar()</code></td>
+<td>AAR/CAAR for one group</td>
+<td>tibble</td>
+</tr>
+<tr class="even">
+<td><code>get_model_stats()</code></td>
+<td>Model fit stats</td>
+<td>list</td>
+</tr>
+<tr class="odd">
+<td><code>tidy.EventStudyTask()</code></td>
+<td>Broom-compatible results</td>
+<td>tibble</td>
+</tr>
+<tr class="even">
+<td><code>export_results()</code></td>
+<td>Write to file</td>
+<td>CSV/XLSX/LaTeX</td>
+</tr>
+<tr class="odd">
+<td><code>plot_event_study()</code></td>
+<td>Visualization</td>
+<td>ggplot2</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

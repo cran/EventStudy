@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Simon Mueller" />
+
+<meta name="date" content="2026-10-09" />
+
+<title>Creating Custom Models</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Creating Custom Models</h1>
+<h4 class="author">Simon Mueller</h4>
+<h4 class="date">2026-10-09</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The EventStudy package uses an object-oriented model system based on
+R6 classes. Every model inherits from <code>ModelBase</code>, which
+defines the interface that the pipeline expects. This vignette shows how
+to create your own custom model and plug it into the event study
+workflow.</p>
+</div>
+<div id="the-modelbase-interface" class="section level1">
+<h1>The ModelBase Interface</h1>
+<p>All models must implement two methods:</p>
+<ol style="list-style-type: decimal">
+<li><strong><code>fit(data_tbl)</code></strong> – Estimate model
+parameters from the estimation window.</li>
+<li><strong><code>abnormal_returns(data_tbl)</code></strong> – Compute
+abnormal returns for all observations (estimation + event windows).</li>
+</ol>
+<p>The <code>fit()</code> method should also populate
+<code>private$.statistics</code> with at least <code>sigma</code> and
+<code>degree_of_freedom</code>, which are used by the test
+statistics.</p>
+</div>
+<div id="example-industry-adjusted-model" class="section level1">
+<h1>Example: Industry-Adjusted Model</h1>
+<p>Suppose you want an industry-adjusted model where the expected return
+equals the industry index return rather than the broad market index.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>IndustryAdjustedModel <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(<span class="st">&quot;IndustryAdjustedModel&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">inherit =</span> ModelBase,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>    <span class="at">model_name =</span> <span class="st">&quot;IndustryAdjustedModel&quot;</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>    <span class="at">fit =</span> <span class="cf">function</span>(data_tbl) {</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>      <span class="co"># No estimation needed -- just compute statistics</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>      private<span class="sc">$</span>.is_fitted <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>      private<span class="sc">$</span><span class="fu">calculate_statistics</span>(data_tbl)</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>    },</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>    <span class="at">abnormal_returns =</span> <span class="cf">function</span>(data_tbl) {</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>      <span class="co"># AR = firm return - industry index return</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>      <span class="co"># Assumes data_tbl has an &#39;industry_return&#39; column</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>      data_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">abnormal_returns =</span> firm_returns <span class="sc">-</span> industry_return)</span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>    }</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>  ),</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>  <span class="at">private =</span> <span class="fu">list</span>(</span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>    <span class="at">calculate_statistics =</span> <span class="cf">function</span>(data_tbl) {</span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a>      estimation_tbl <span class="ot">&lt;-</span> data_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">filter</span>(estimation_window <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a>      residuals <span class="ot">&lt;-</span> estimation_tbl<span class="sc">$</span>firm_returns <span class="sc">-</span> estimation_tbl<span class="sc">$</span>industry_return</span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a>      private<span class="sc">$</span><span class="fu">add_residuals</span>(residuals)</span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>      private<span class="sc">$</span><span class="fu">first_order_autocorrelation</span>(residuals)</span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a>      sigma <span class="ot">&lt;-</span> <span class="fu">sd</span>(residuals, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a>      private<span class="sc">$</span>.statistics<span class="sc">$</span>sigma <span class="ot">&lt;-</span> sigma</span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a>      private<span class="sc">$</span>.statistics<span class="sc">$</span>degree_of_freedom <span class="ot">&lt;-</span> <span class="fu">length</span>(residuals) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a>      <span class="co"># Forecast error correction</span></span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a>      event_window_tbl <span class="ot">&lt;-</span> data_tbl <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(event_window <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a>      private<span class="sc">$</span><span class="fu">calculate_forecast_error_correction</span>(</span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a>        sigma, <span class="fu">nrow</span>(estimation_tbl),</span>
+<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a>        estimation_tbl<span class="sc">$</span>index_returns,</span>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a>        event_window_tbl<span class="sc">$</span>index_returns</span>
+<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a>      )</span>
+<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a>    }</span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a>  )</span>
+<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="using-the-custom-model" class="section level1">
+<h1>Using the Custom Model</h1>
+<p>Once defined, use your model exactly like any built-in model:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Create parameter set with custom model</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>params <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">return_model =</span> IndustryAdjustedModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co"># Run the event study</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>task <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_data, index_data, request_data)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task, params)</span></code></pre></div>
+</div>
+<div id="example-excess-return-model" class="section level1">
+<h1>Example: Excess Return Model</h1>
+<p>A model that simply computes excess returns over the risk-free
+rate:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>ExcessReturnModel <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(<span class="st">&quot;ExcessReturnModel&quot;</span>,</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">inherit =</span> ModelBase,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="at">model_name =</span> <span class="st">&quot;ExcessReturnModel&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    <span class="at">risk_free_rate =</span> <span class="fl">0.0001</span>,  <span class="co"># daily risk-free rate</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>    <span class="at">initialize =</span> <span class="cf">function</span>(<span class="at">risk_free_rate =</span> <span class="fl">0.0001</span>) {</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>      self<span class="sc">$</span>risk_free_rate <span class="ot">&lt;-</span> risk_free_rate</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>    },</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>    <span class="at">fit =</span> <span class="cf">function</span>(data_tbl) {</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>      private<span class="sc">$</span>.is_fitted <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>      estimation_tbl <span class="ot">&lt;-</span> data_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">filter</span>(estimation_window <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>      residuals <span class="ot">&lt;-</span> estimation_tbl<span class="sc">$</span>firm_returns <span class="sc">-</span> self<span class="sc">$</span>risk_free_rate</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>      private<span class="sc">$</span>.statistics<span class="sc">$</span>sigma <span class="ot">&lt;-</span> <span class="fu">sd</span>(residuals, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>      private<span class="sc">$</span>.statistics<span class="sc">$</span>degree_of_freedom <span class="ot">&lt;-</span> <span class="fu">length</span>(residuals) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>      private<span class="sc">$</span><span class="fu">add_residuals</span>(residuals)</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>      private<span class="sc">$</span><span class="fu">first_order_autocorrelation</span>(residuals)</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>    },</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>    <span class="at">abnormal_returns =</span> <span class="cf">function</span>(data_tbl) {</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>      data_tbl <span class="sc">%&gt;%</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">abnormal_returns =</span> firm_returns <span class="sc">-</span> self<span class="sc">$</span>risk_free_rate)</span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>    }</span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  )</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="using-factor-models" class="section level1">
+<h1>Using Factor Models</h1>
+<p>The package includes several built-in factor models that inherit from
+<code>LinearFactorModel</code>:</p>
+<ul>
+<li><code>FamaFrench3FactorModel</code> – SMB, HML, market excess</li>
+<li><code>FamaFrench5FactorModel</code> – adds RMW, CMA</li>
+<li><code>Carhart4FactorModel</code> – 3-factor + momentum</li>
+</ul>
+<p>These require factor data to be provided via the
+<code>factor_tbl</code> argument in <code>EventStudyTask</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Factor data with date column matching firm/index data</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>factor_data <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">date =</span> dates,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">smb =</span> smb_returns,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">hml =</span> hml_returns,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">risk_free_rate =</span> rf_rate</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>task <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_data, index_data, request_data,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>                            <span class="at">factor_tbl =</span> factor_data)</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>params <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">return_model =</span> FamaFrench3FactorModel<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>)</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task, params)</span></code></pre></div>
+</div>
+<div id="key-points" class="section level1">
+<h1>Key Points</h1>
+<ul>
+<li>Always inherit from <code>ModelBase</code></li>
+<li>Implement <code>fit()</code> and
+<code>abnormal_returns()</code></li>
+<li>Populate <code>private$.statistics$sigma</code> and
+<code>private$.statistics$degree_of_freedom</code></li>
+<li>Use <code>private$add_residuals()</code> and
+<code>private$first_order_autocorrelation()</code> for diagnostics
+compatibility</li>
+<li>Set <code>private$.is_fitted &lt;- TRUE</code> after successful
+fitting</li>
+<li>The model is deep-cloned for each event, so you can store
+event-specific state</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

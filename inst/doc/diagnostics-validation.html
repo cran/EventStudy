@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Simon Mueller" />
+
+<meta name="date" content="2026-10-09" />
+
+<title>Diagnostics and Validation for Event Studies</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Diagnostics and Validation for Event
+Studies</h1>
+<h4 class="author">Simon Mueller</h4>
+<h4 class="date">2026-10-09</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>A well-conducted event study requires more than just running the
+pipeline. You should validate the data <strong>before</strong>
+estimation and diagnose the model <strong>after</strong> fitting. The
+EventStudy package provides three dedicated functions and a diagnostic
+plotting tool:</p>
+<table style="width:100%;">
+<colgroup>
+<col width="25%" />
+<col width="33%" />
+<col width="41%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th>When to use</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>validate_task()</code></td>
+<td>Before or after <code>prepare_event_study()</code></td>
+<td>Data integrity, windows, gaps</td>
+</tr>
+<tr class="even">
+<td><code>model_diagnostics()</code></td>
+<td>After <code>fit_model()</code></td>
+<td>Residual normality, autocorrelation, model fit</td>
+</tr>
+<tr class="odd">
+<td><code>pretrend_test()</code></td>
+<td>After <code>fit_model()</code></td>
+<td>Pre-event abnormal returns</td>
+</tr>
+<tr class="even">
+<td><code>plot_diagnostics()</code></td>
+<td>After <code>fit_model()</code></td>
+<td>Visual residual analysis</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
+</div>
+<div id="setup-running-an-event-study" class="section level1">
+<h1>Setup: Running an Event Study</h1>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">300</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">format</span>(<span class="fu">seq</span>(<span class="fu">as.Date</span>(<span class="st">&quot;2014-06-01&quot;</span>), <span class="at">by =</span> <span class="st">&quot;day&quot;</span>, <span class="at">length.out =</span> n),</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>                <span class="st">&quot;%d.%m.%Y&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>firms <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;FIRM_A&quot;</span>, <span class="st">&quot;FIRM_B&quot;</span>, <span class="st">&quot;FIRM_C&quot;</span>, <span class="st">&quot;FIRM_D&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>firm_tbl <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(firms, <span class="cf">function</span>(sym) {</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>    <span class="at">symbol   =</span> sym,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>    <span class="at">date     =</span> dates,</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>    <span class="at">adjusted =</span> <span class="dv">100</span> <span class="sc">*</span> <span class="fu">cumprod</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="fl">0.0003</span>, <span class="fl">0.015</span>))</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>  )</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>})</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>index_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>  <span class="at">symbol   =</span> <span class="st">&quot;INDEX_1&quot;</span>,</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  <span class="at">date     =</span> dates,</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  <span class="at">adjusted =</span> <span class="dv">1000</span> <span class="sc">*</span> <span class="fu">cumprod</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="fl">0.0002</span>, <span class="fl">0.012</span>))</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>)</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>request_tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>  <span class="at">event_id                =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>,</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>  <span class="at">firm_symbol             =</span> firms,</span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>  <span class="at">index_symbol            =</span> <span class="fu">rep</span>(<span class="st">&quot;INDEX_1&quot;</span>, <span class="dv">4</span>),</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>  <span class="at">event_date              =</span> <span class="fu">rep</span>(dates[<span class="dv">200</span>], <span class="dv">4</span>),</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>  <span class="at">group                   =</span> <span class="fu">c</span>(<span class="st">&quot;Group_A&quot;</span>, <span class="st">&quot;Group_A&quot;</span>, <span class="st">&quot;Group_B&quot;</span>, <span class="st">&quot;Group_B&quot;</span>),</span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a>  <span class="at">event_window_start      =</span> <span class="fu">rep</span>(<span class="sc">-</span><span class="dv">10</span><span class="dt">L</span>, <span class="dv">4</span>),</span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>  <span class="at">event_window_end        =</span> <span class="fu">rep</span>(<span class="dv">10</span><span class="dt">L</span>, <span class="dv">4</span>),</span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a>  <span class="at">shift_estimation_window =</span> <span class="fu">rep</span>(<span class="sc">-</span><span class="dv">11</span><span class="dt">L</span>, <span class="dv">4</span>),</span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a>  <span class="at">estimation_window_length =</span> <span class="fu">rep</span>(<span class="dv">150</span><span class="dt">L</span>, <span class="dv">4</span>)</span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a>)</span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>task <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl)</span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a>params <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>()</span></code></pre></div>
+</div>
+<div id="step-1-validate-the-task" class="section level1">
+<h1>Step 1: Validate the Task</h1>
+<p><code>validate_task()</code> checks data integrity before estimation.
+Run it right after creating the task or after calling
+<code>prepare_event_study()</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">validate_task</span>(task)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; Validation passed: no issues found across 4 event(s).</span></span></code></pre></div>
+<div id="what-it-checks" class="section level2">
+<h2>What It Checks</h2>
+<p>The function performs five checks for each event:</p>
+<div id="event-date-exists" class="section level3">
+<h3>1. Event Date Exists</h3>
+<p>The event date from the request table must appear in the stock data.
+Missing event dates typically indicate mismatched date formats or
+non-trading days:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># This would trigger a warning:</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># [Event 1 / FIRM_A] Event date &#39;32.02.2015&#39; not found in data.</span></span></code></pre></div>
+</div>
+<div id="sufficient-estimation-window" class="section level3">
+<h3>2. Sufficient Estimation Window</h3>
+<p>The estimation window must have enough observations for reliable
+model estimation. The default minimum is 30, but you can adjust it:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Stricter requirement: at least 100 observations</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">validate_task</span>(task, <span class="at">min_estimation_obs =</span> <span class="dv">100</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># Lenient: at least 20</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">validate_task</span>(task, <span class="at">min_estimation_obs =</span> <span class="dv">20</span>)</span></code></pre></div>
+</div>
+<div id="time-series-gaps" class="section level3">
+<h3>3. Time Series Gaps</h3>
+<p>Large gaps (&gt; 5 calendar days) in the time series may indicate
+missing data, delistings, or trading halts:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Warnings like:</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># [Event 2 / FIRM_B] 1 gap(s) &gt; 5 days found in time series.</span></span></code></pre></div>
+</div>
+<div id="window-overlap" class="section level3">
+<h3>4. Window Overlap</h3>
+<p>Estimation and event windows must not overlap, as this would
+contaminate the benchmark model:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Warnings like:</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># [Event 3 / FIRM_C] Estimation and event windows overlap by 5 observation(s).</span></span></code></pre></div>
+</div>
+<div id="thin-trading" class="section level3">
+<h3>5. Thin Trading</h3>
+<p>A high proportion of zero returns in the estimation window suggests
+illiquid securities, which violate the assumptions of most test
+statistics:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Warnings like:</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co"># [Event 4 / FIRM_D] 15.3% zero returns in estimation window (possible thin trading).</span></span></code></pre></div>
+</div>
+</div>
+<div id="using-validation-results" class="section level2">
+<h2>Using Validation Results</h2>
+<p><code>validate_task()</code> returns the task invisibly and issues
+<code>warning()</code> calls for each problem. You can capture warnings
+programmatically:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">prepare_event_study</span>(task, params)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>warnings <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="fu">withCallingHandlers</span>(</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="fu">validate_task</span>(task),</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="at">warning =</span> <span class="cf">function</span>(w) {</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>      <span class="fu">message</span>(<span class="st">&quot;Issue: &quot;</span>, <span class="fu">conditionMessage</span>(w))</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>      <span class="fu">invokeRestart</span>(<span class="st">&quot;muffleWarning&quot;</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    }</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  )</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="step-2-model-diagnostics" class="section level1">
+<h1>Step 2: Model Diagnostics</h1>
+<p>After fitting models, <code>model_diagnostics()</code> runs
+statistical tests on the estimation-window residuals:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">fit_model</span>(task, params)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>diag <span class="ot">&lt;-</span> <span class="fu">model_diagnostics</span>(task)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>diag</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 x 9</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;   event_id firm_symbol is_fitted shapiro_p dw_stat ljung_box_p  acf1  sigma    r2</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;      &lt;int&gt; &lt;chr&gt;       &lt;lgl&gt;         &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; 1        1 FIRM_A      TRUE          0.342    2.01       0.654 0.012 0.0149 0.032</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; 2        2 FIRM_B      TRUE          0.127    1.95       0.891 0.034 0.0162 0.028</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; ...</span></span></code></pre></div>
+<div id="diagnostic-tests-explained" class="section level2">
+<h2>Diagnostic Tests Explained</h2>
+<div id="shapiro-wilk-normality-test-shapiro_p" class="section level3">
+<h3>Shapiro-Wilk Normality Test (<code>shapiro_p</code>)</h3>
+<p>Tests whether estimation-window residuals follow a normal
+distribution. Parametric test statistics (AR T-test, CAR T-test, Patell
+Z) assume normally distributed residuals.</p>
+<ul>
+<li><strong>p &gt; 0.05</strong>: No evidence against normality
+(good)</li>
+<li><strong>p &lt; 0.05</strong>: Residuals may not be normal</li>
+</ul>
+<p><strong>What to do if normality is rejected:</strong></p>
+<ul>
+<li>Use non-parametric test statistics (<code>SignTest</code>,
+<code>GeneralizedSignTest</code>, <code>RankTest</code>) instead of or
+alongside parametric tests</li>
+<li>The violation may not matter with large samples (CLT applies to
+cross-sectional tests)</li>
+</ul>
+</div>
+<div id="durbin-watson-statistic-dw_stat" class="section level3">
+<h3>Durbin-Watson Statistic (<code>dw_stat</code>)</h3>
+<p>Tests for first-order autocorrelation in residuals. Values near 2
+indicate no autocorrelation.</p>
+<ul>
+<li><strong>dw ≈ 2</strong>: No autocorrelation (good)</li>
+<li><strong>dw &lt; 1.5</strong>: Positive autocorrelation</li>
+<li><strong>dw &gt; 2.5</strong>: Negative autocorrelation</li>
+</ul>
+<p><strong>What to do if autocorrelation is detected:</strong></p>
+<ul>
+<li>Consider a GARCH model which can capture serial dependence in
+variance</li>
+<li>Check for thin trading or data errors</li>
+<li>Autocorrelation in residuals can inflate test statistics</li>
+</ul>
+</div>
+<div id="ljung-box-test-ljung_box_p" class="section level3">
+<h3>Ljung-Box Test (<code>ljung_box_p</code>)</h3>
+<p>A more formal test for autocorrelation at multiple lags (up to 10 or
+<code>floor(n/5)</code>, whichever is smaller).</p>
+<ul>
+<li><strong>p &gt; 0.05</strong>: No significant autocorrelation
+(good)</li>
+<li><strong>p &lt; 0.05</strong>: Residuals are autocorrelated</li>
+</ul>
+</div>
+<div id="first-order-autocorrelation-acf1" class="section level3">
+<h3>First-Order Autocorrelation (<code>acf1</code>)</h3>
+<p>The lag-1 autocorrelation coefficient of residuals. Values close to
+zero are desirable:</p>
+<ul>
+<li><strong>|acf1| &lt; 0.1</strong>: Negligible autocorrelation</li>
+<li><strong>|acf1| &gt; 0.2</strong>: Substantial autocorrelation</li>
+</ul>
+</div>
+<div id="sigma-and-r-squared-sigma-r2" class="section level3">
+<h3>Sigma and R-squared (<code>sigma</code>, <code>r2</code>)</h3>
+<ul>
+<li><strong>sigma</strong>: Residual standard error from the estimation
+window. Used to standardize abnormal returns in test statistics.</li>
+<li><strong>r2</strong>: Proportion of return variance explained by the
+model. Higher R² means more precise abnormal return estimates.</li>
+</ul>
+</div>
+</div>
+<div id="diagnostics-for-a-single-event" class="section level2">
+<h2>Diagnostics for a Single Event</h2>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>diag_event1 <span class="ot">&lt;-</span> <span class="fu">model_diagnostics</span>(task, <span class="at">event_id =</span> <span class="dv">1</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>diag_event1</span></code></pre></div>
+</div>
+<div id="interpreting-diagnostics-as-a-table" class="section level2">
+<h2>Interpreting Diagnostics as a Table</h2>
+<p>A quick way to flag problematic events:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>diag <span class="ot">&lt;-</span> <span class="fu">model_diagnostics</span>(task)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co"># Flag events with potential issues</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>diag <span class="sc">%&gt;%</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>    <span class="at">normality_ok     =</span> shapiro_p <span class="sc">&gt;</span> <span class="fl">0.05</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>    <span class="at">no_autocorr      =</span> ljung_box_p <span class="sc">&gt;</span> <span class="fl">0.05</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>    <span class="at">dw_ok            =</span> dw_stat <span class="sc">&gt;</span> <span class="fl">1.5</span> <span class="sc">&amp;</span> dw_stat <span class="sc">&lt;</span> <span class="fl">2.5</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>    <span class="at">all_ok           =</span> normality_ok <span class="sc">&amp;</span> no_autocorr <span class="sc">&amp;</span> dw_ok</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  <span class="fu">select</span>(event_id, firm_symbol, normality_ok, no_autocorr, dw_ok, all_ok)</span></code></pre></div>
+</div>
+</div>
+<div id="step-3-visual-diagnostics" class="section level1">
+<h1>Step 3: Visual Diagnostics</h1>
+<p><code>plot_diagnostics()</code> produces a four-panel residual
+analysis plot:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">plot_diagnostics</span>(task, <span class="at">event_id =</span> <span class="dv">1</span>)</span></code></pre></div>
+<p>The four panels are:</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Residuals vs. Observation</strong>: Should show no
+pattern (random scatter around zero). Trends suggest model
+misspecification; funneling suggests heteroskedasticity.</p></li>
+<li><p><strong>Q-Q Plot</strong>: Points should fall on the diagonal
+line. Deviations at the tails indicate heavy-tailed or skewed
+residuals.</p></li>
+<li><p><strong>Residual Distribution</strong>: Histogram of residuals.
+Should be roughly bell-shaped and centered at zero.</p></li>
+<li><p><strong>ACF of Residuals</strong>: Autocorrelation at each lag.
+Bars exceeding the blue dashed lines (95% confidence bands) indicate
+significant autocorrelation.</p></li>
+</ol>
+<div id="comparing-diagnostics-across-events" class="section level2">
+<h2>Comparing Diagnostics Across Events</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Visual diagnostics for all events</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="cf">for</span> (eid <span class="cf">in</span> task<span class="sc">$</span>data_tbl<span class="sc">$</span>event_id) {</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="fu">plot_diagnostics</span>(task, <span class="at">event_id =</span> eid)</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="step-4-pre-trend-testing" class="section level1">
+<h1>Step 4: Pre-trend Testing</h1>
+<p>The pre-trend test checks whether abnormal returns are already
+present <strong>before</strong> the event. Significant pre-event effects
+may indicate:</p>
+<ul>
+<li>Information leakage</li>
+<li>Confounding events</li>
+<li>Model misspecification</li>
+<li>The event date is incorrect</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">calculate_statistics</span>(task, params)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>pretrend <span class="ot">&lt;-</span> <span class="fu">pretrend_test</span>(task)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>pretrend</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 x 7</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt;   group   n_pre_periods n_events mean_pre_ar sd_pre_ar t_stat p_value</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;           &lt;int&gt;    &lt;int&gt;       &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt;   Group_A            10        2     0.00012   0.0142   0.168   0.868</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;   Group_B            10        2    -0.00034   0.0155  -0.221   0.826</span></span></code></pre></div>
+<div id="interpreting-results" class="section level2">
+<h2>Interpreting Results</h2>
+<ul>
+<li><strong>mean_pre_ar</strong>: Average abnormal return in the
+pre-event window. Should be close to zero.</li>
+<li><strong>t_stat</strong> and <strong>p_value</strong>: t-test of H₀:
+mean pre-event AR = 0.
+<ul>
+<li>p &gt; 0.05: No evidence of pre-event effects (good)</li>
+<li>p &lt; 0.05: Significant pre-event effects (investigate
+further)</li>
+</ul></li>
+</ul>
+</div>
+<div id="pre-trend-test-by-group" class="section level2">
+<h2>Pre-trend Test by Group</h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>pretrend_a <span class="ot">&lt;-</span> <span class="fu">pretrend_test</span>(task, <span class="at">group =</span> <span class="st">&quot;Group_A&quot;</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>pretrend_b <span class="ot">&lt;-</span> <span class="fu">pretrend_test</span>(task, <span class="at">group =</span> <span class="st">&quot;Group_B&quot;</span>)</span></code></pre></div>
+</div>
+<div id="what-to-do-when-pre-trends-are-detected" class="section level2">
+<h2>What to Do When Pre-trends Are Detected</h2>
+<ol style="list-style-type: decimal">
+<li><strong>Check the event date.</strong> Is it the announcement date
+or the effective date? Information may leak before the official
+announcement.</li>
+<li><strong>Look for confounding events.</strong> Other news may have
+moved the stock in the pre-event window.</li>
+<li><strong>Extend the estimation window.</strong> A longer estimation
+window can improve the model fit and reduce spurious pre-event
+effects.</li>
+<li><strong>Try different models.</strong> Factor models (FF3, FF5) may
+capture systematic patterns that the Market Model misses.</li>
+</ol>
+</div>
+</div>
+<div id="a-complete-diagnostic-workflow" class="section level1">
+<h1>A Complete Diagnostic Workflow</h1>
+<p>Putting all four tools together in a systematic workflow:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># 1. Create task</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>task <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_tbl, index_tbl, request_tbl)</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co"># 2. Validate data BEFORE estimation</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="fu">validate_task</span>(task)</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co"># 3. Prepare and fit</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>params <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(<span class="at">return_model =</span> MarketModel<span class="sc">$</span><span class="fu">new</span>())</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">prepare_event_study</span>(task, params)</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co"># 4. Validate AFTER preparation (now windows are assigned)</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="fu">validate_task</span>(task)</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a></span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a><span class="co"># 5. Fit models</span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">fit_model</span>(task, params)</span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co"># 6. Numerical diagnostics</span></span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a>diag <span class="ot">&lt;-</span> <span class="fu">model_diagnostics</span>(task)</span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a><span class="fu">print</span>(diag)</span>
+<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a></span>
+<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a><span class="co"># 7. Flag problematic events</span></span>
+<span id="cb17-22"><a href="#cb17-22" tabindex="-1"></a>problems <span class="ot">&lt;-</span> diag <span class="sc">%&gt;%</span></span>
+<span id="cb17-23"><a href="#cb17-23" tabindex="-1"></a>  <span class="fu">filter</span>(shapiro_p <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">|</span> ljung_box_p <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">|</span> dw_stat <span class="sc">&lt;</span> <span class="fl">1.5</span> <span class="sc">|</span> dw_stat <span class="sc">&gt;</span> <span class="fl">2.5</span>)</span>
+<span id="cb17-24"><a href="#cb17-24" tabindex="-1"></a></span>
+<span id="cb17-25"><a href="#cb17-25" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(problems) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb17-26"><a href="#cb17-26" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Events with diagnostic issues:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb17-27"><a href="#cb17-27" tabindex="-1"></a>  <span class="fu">print</span>(problems <span class="sc">%&gt;%</span> <span class="fu">select</span>(event_id, firm_symbol, shapiro_p, ljung_box_p, dw_stat))</span>
+<span id="cb17-28"><a href="#cb17-28" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb17-29"><a href="#cb17-29" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;All events pass diagnostic checks.</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb17-30"><a href="#cb17-30" tabindex="-1"></a>}</span>
+<span id="cb17-31"><a href="#cb17-31" tabindex="-1"></a></span>
+<span id="cb17-32"><a href="#cb17-32" tabindex="-1"></a><span class="co"># 8. Visual diagnostics for flagged events (or all events)</span></span>
+<span id="cb17-33"><a href="#cb17-33" tabindex="-1"></a>events_to_check <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">nrow</span>(problems) <span class="sc">&gt;</span> <span class="dv">0</span>) problems<span class="sc">$</span>event_id <span class="cf">else</span> diag<span class="sc">$</span>event_id[<span class="dv">1</span>]</span>
+<span id="cb17-34"><a href="#cb17-34" tabindex="-1"></a><span class="cf">for</span> (eid <span class="cf">in</span> events_to_check) {</span>
+<span id="cb17-35"><a href="#cb17-35" tabindex="-1"></a>  <span class="fu">plot_diagnostics</span>(task, <span class="at">event_id =</span> eid)</span>
+<span id="cb17-36"><a href="#cb17-36" tabindex="-1"></a>}</span>
+<span id="cb17-37"><a href="#cb17-37" tabindex="-1"></a></span>
+<span id="cb17-38"><a href="#cb17-38" tabindex="-1"></a><span class="co"># 9. Calculate statistics and test pre-trends</span></span>
+<span id="cb17-39"><a href="#cb17-39" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">calculate_statistics</span>(task, params)</span>
+<span id="cb17-40"><a href="#cb17-40" tabindex="-1"></a>pretrend <span class="ot">&lt;-</span> <span class="fu">pretrend_test</span>(task)</span>
+<span id="cb17-41"><a href="#cb17-41" tabindex="-1"></a><span class="fu">print</span>(pretrend)</span></code></pre></div>
+</div>
+<div id="decision-guide" class="section level1">
+<h1>Decision Guide</h1>
+<table>
+<colgroup>
+<col width="51%" />
+<col width="27%" />
+<col width="21%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Diagnostic result</th>
+<th>Severity</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Shapiro p &lt; 0.05</td>
+<td>Moderate</td>
+<td>Add non-parametric tests (Sign, Rank)</td>
+</tr>
+<tr class="even">
+<td>DW &lt; 1.5 or &gt; 2.5</td>
+<td>Moderate</td>
+<td>Consider GARCH; check for thin trading</td>
+</tr>
+<tr class="odd">
+<td>Ljung-Box p &lt; 0.05</td>
+<td>Moderate</td>
+<td>Check data quality; consider GARCH</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>acf1</td>
+<td>&gt; 0.2</td>
+</tr>
+<tr class="odd">
+<td>R² very low (&lt; 0.01)</td>
+<td>Low</td>
+<td>Normal for many stocks; consider factor models</td>
+</tr>
+<tr class="even">
+<td>R² very high (&gt; 0.8)</td>
+<td>Low</td>
+<td>Verify data; possible look-ahead bias</td>
+</tr>
+<tr class="odd">
+<td>Pre-trend p &lt; 0.05</td>
+<td>High</td>
+<td>Investigate leakage, confounders, wrong event date</td>
+</tr>
+<tr class="even">
+<td>Estimation window &lt; 30 obs</td>
+<td>High</td>
+<td>Extend window or drop event</td>
+</tr>
+<tr class="odd">
+<td>Window overlap</td>
+<td>Critical</td>
+<td>Fix request table parameters</td>
+</tr>
+<tr class="even">
+<td>&gt; 10% zero returns</td>
+<td>Moderate</td>
+<td>Possible illiquidity; consider non-parametric tests</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<ul>
+<li>Campbell, J. Y., Lo, A. W. &amp; MacKinlay, A. C. (1997). <em>The
+Econometrics of Financial Markets</em>. Princeton University Press.</li>
+<li>MacKinlay, A. C. (1997). Event Studies in Economics and Finance.
+<em>Journal of Economic Literature</em>, 35(1), 13–39.</li>
+<li>Kolari, J. W. &amp; Pynnonen, S. (2010). Event study testing with
+cross-sectional correlation of abnormal returns. <em>Review of Financial
+Studies</em>, 23(11), 3996–4025.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

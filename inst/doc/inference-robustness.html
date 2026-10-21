@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Simon Mueller" />
+
+<meta name="date" content="2026-10-09" />
+
+<title>Inference and Robustness: HAC, Bootstrap, and Multiple Testing</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Inference and Robustness: HAC, Bootstrap,
+and Multiple Testing</h1>
+<h4 class="author">Simon Mueller</h4>
+<h4 class="date">2026-10-09</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Classical event study inference relies on i.i.d. assumptions that are
+often violated in practice. The EventStudy package provides several
+tools to strengthen the robustness of your inference:</p>
+<ul>
+<li><strong>HAC Standard Errors</strong> (Newey-West) for
+heteroskedasticity- and autocorrelation-consistent coefficient
+estimation</li>
+<li><strong>Kolari-Pynnonen Test</strong> that adjusts the BMP test for
+cross-sectional correlation</li>
+<li><strong>Wild Bootstrap</strong> inference for AAR and CAAR test
+statistics</li>
+<li><strong>Multiple Testing Corrections</strong> (Bonferroni, BH, Holm,
+etc.) for controlling the family-wise error rate or false discovery
+rate</li>
+</ul>
+</div>
+<div id="hac-standard-errors" class="section level1">
+<h1>HAC Standard Errors</h1>
+<p>When estimation-window residuals exhibit heteroskedasticity or
+autocorrelation, OLS standard errors are biased. The
+<code>use_hac = TRUE</code> option applies Newey-West HAC standard
+errors via the <code>sandwich</code> package.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(EventStudy)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>task <span class="ot">&lt;-</span> EventStudyTask<span class="sc">$</span><span class="fu">new</span>(firm_data, index_data, request)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># Enable HAC SEs on the MarketModel</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>ps <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="at">return_model =</span> MarketModel<span class="sc">$</span><span class="fu">new</span>(<span class="at">use_hac =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>)</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task, ps)</span></code></pre></div>
+<p>You can also specify a custom lag for the Newey-West estimator:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ps <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">return_model =</span> MarketModel<span class="sc">$</span><span class="fu">new</span>(<span class="at">use_hac =</span> <span class="cn">TRUE</span>, <span class="at">hac_lag =</span> <span class="dv">5</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>)</span></code></pre></div>
+<p>HAC standard errors are also available for factor models:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>ps <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">return_model =</span> FamaFrench3FactorModel<span class="sc">$</span><span class="fu">new</span>(<span class="at">use_hac =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>)</span></code></pre></div>
+<p>The OLS sigma (used for abnormal return standardization in test
+statistics) is deliberately unchanged – HAC only affects coefficient
+standard errors and p-values.</p>
+</div>
+<div id="kolari-pynnonen-test" class="section level1">
+<h1>Kolari-Pynnonen Test</h1>
+<p>The Boehmer, Musumeci &amp; Poulsen (BMP) test can be oversized when
+event-window residuals are cross-sectionally correlated. The
+Kolari-Pynnonen adjustment corrects for this:</p>
+<p><span class="math display">\[t_{KP} = t_{BMP} \sqrt{\frac{1 -
+\bar{r}}{1 + (N-1)\bar{r}}}\]</span></p>
+<p>where <span class="math inline">\(\bar{r}\)</span> is the average
+pairwise correlation of standardized abnormal returns in the estimation
+window.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>ps <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">multi_event_statistics =</span> MultiEventStatisticsSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>    <span class="at">tests =</span> <span class="fu">list</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>      BMPTest<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>      KolariPynnonenTest<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>    )</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  )</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task, ps)</span></code></pre></div>
+</div>
+<div id="wild-bootstrap-inference" class="section level1">
+<h1>Wild Bootstrap Inference</h1>
+<p>The wild bootstrap provides distribution-free inference by resampling
+with random per-firm sign flips. This preserves the cross-sectional
+dependence structure while testing the null hypothesis of zero abnormal
+returns.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">create_fitted_mock_task</span>()</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co"># Run bootstrap with 999 replications</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>boot_result <span class="ot">&lt;-</span> <span class="fu">bootstrap_test</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  task,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">n_boot =</span> <span class="dv">999</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">weight_type =</span> <span class="st">&quot;rademacher&quot;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">42</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>boot_result</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; # A tibble: 11 x 5</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;    relative_index observed_aar observed_caar boot_p_aar boot_p_caar</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;             &lt;int&gt;        &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;  1             -5      0.00123       0.00123      0.842       0.842</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt;  ...</span></span></code></pre></div>
+<p>Two weight distributions are available:</p>
+<ul>
+<li><code>&quot;rademacher&quot;</code> (default): <span class="math inline">\(w_i
+\in \{-1, +1\}\)</span> with equal probability</li>
+<li><code>&quot;mammen&quot;</code>: Mammen two-point distribution, better for
+skewed data</li>
+</ul>
+<p>You can also bootstrap only the AAR or CAAR statistic:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>boot_aar <span class="ot">&lt;-</span> <span class="fu">bootstrap_test</span>(task, <span class="at">n_boot =</span> <span class="dv">499</span>, <span class="at">statistic =</span> <span class="st">&quot;aar&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>boot_caar <span class="ot">&lt;-</span> <span class="fu">bootstrap_test</span>(task, <span class="at">n_boot =</span> <span class="dv">499</span>, <span class="at">statistic =</span> <span class="st">&quot;caar&quot;</span>)</span></code></pre></div>
+</div>
+<div id="multiple-testing-corrections" class="section level1">
+<h1>Multiple Testing Corrections</h1>
+<p>When testing abnormal returns at many event-window days, the
+probability of a false positive increases. The
+<code>adjust_p_values()</code> function applies standard correction
+methods:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">create_fitted_mock_task</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co"># Benjamini-Hochberg (controls FDR)</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>result_bh <span class="ot">&lt;-</span> <span class="fu">adjust_p_values</span>(task, <span class="at">method =</span> <span class="st">&quot;BH&quot;</span>, <span class="at">stat_name =</span> <span class="st">&quot;CSectT&quot;</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co"># Bonferroni (controls FWER)</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>result_bonf <span class="ot">&lt;-</span> <span class="fu">adjust_p_values</span>(task, <span class="at">method =</span> <span class="st">&quot;bonferroni&quot;</span>, <span class="at">stat_name =</span> <span class="st">&quot;CSectT&quot;</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co"># Holm (less conservative than Bonferroni)</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>result_holm <span class="ot">&lt;-</span> <span class="fu">adjust_p_values</span>(task, <span class="at">method =</span> <span class="st">&quot;holm&quot;</span>, <span class="at">stat_name =</span> <span class="st">&quot;CSectT&quot;</span>)</span></code></pre></div>
+<p>The result includes both raw and adjusted p-values:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>result_bh</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 11 x 8+</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;    relative_index   aar  caar p_raw_aar p_adj_aar p_raw_caar p_adj_caar ...</span></span></code></pre></div>
+<p>The function automatically detects the test statistic type (t, z,
+BMP, etc.) and computes p-values from the appropriate distribution.</p>
+<p>You can filter by group:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">adjust_p_values</span>(task, <span class="at">method =</span> <span class="st">&quot;BH&quot;</span>, <span class="at">stat_name =</span> <span class="st">&quot;CSectT&quot;</span>,</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>                           <span class="at">group =</span> <span class="st">&quot;MyGroup&quot;</span>)</span></code></pre></div>
+</div>
+<div id="combining-approaches" class="section level1">
+<h1>Combining Approaches</h1>
+<p>For maximum robustness, combine multiple approaches:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># 1. Use HAC SEs in the model</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>ps <span class="ot">&lt;-</span> ParameterSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">return_model =</span> MarketModel<span class="sc">$</span><span class="fu">new</span>(<span class="at">use_hac =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">multi_event_statistics =</span> MultiEventStatisticsSet<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>    <span class="at">tests =</span> <span class="fu">list</span>(</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>      CSectTTest<span class="sc">$</span><span class="fu">new</span>(),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>      KolariPynnonenTest<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>    )</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  )</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>)</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>task <span class="ot">&lt;-</span> <span class="fu">run_event_study</span>(task, ps)</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co"># 2. Apply multiple testing correction</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>adjusted <span class="ot">&lt;-</span> <span class="fu">adjust_p_values</span>(task, <span class="at">method =</span> <span class="st">&quot;BH&quot;</span>, <span class="at">stat_name =</span> <span class="st">&quot;CSectT&quot;</span>)</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co"># 3. Validate with bootstrap</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>boot <span class="ot">&lt;-</span> <span class="fu">bootstrap_test</span>(task, <span class="at">n_boot =</span> <span class="dv">999</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span></code></pre></div>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<ul>
+<li>Kolari, J. W. and Pynnonen, S. (2010). Event study testing with
+cross-sectional correlation of abnormal returns. <em>Review of Financial
+Studies</em>, 23(11), 3996-4025.</li>
+<li>Newey, W. K. and West, K. D. (1987). A simple, positive
+semi-definite, heteroskedasticity and autocorrelation consistent
+covariance matrix. <em>Econometrica</em>, 55(3), 703-708.</li>
+<li>Benjamini, Y. and Hochberg, Y. (1995). Controlling the false
+discovery rate: A practical and powerful approach to multiple testing.
+<em>Journal of the Royal Statistical Society</em>, 57(1), 289-300.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
