@@ -1,7 +1,7 @@
 Package: EventStudy
 Type: Package
 Title: Event Study Analysis
-Version: 0.66.0
+Version: 0.70
 Date: 2026-10-05
 Authors@R: 
     c(person(given = "Simon",
@@ -53,7 +53,7 @@ VignetteBuilder: knitr
 Config/roxygen2/version: 8.0.0
 LazyData: true
 NeedsCompilation: no
-Packaged: 2026-10-09 10:15:18 UTC; simonm
+Packaged: 2026-10-30 20:15:46 UTC; simonm
 Author: Simon Mueller [cre, aut]
 Repository: CRAN
-Date/Publication: 2026-10-21 09:40:02 UTC
+Date/Publication: 2026-10-31 00:00:02 UTC
